@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HR Admin Pro</title>
+    <title>HR Admin Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -11,27 +11,19 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 🔴 ضع رابط السكربت الخاص بك هنا 🔴
-        const API_URL = "https://script.google.com/macros/s/AKfycbwIau5j-OcoPAkcjyTMBu584AHfmM_riBdq-IBDHs3jCfe22NGI8D4REady4woSCDgIUA/exec";
+        // 🔴🔴🔴 ضع رابط السكربت الجديد هنا وتأكد من نشره بصلاحية ANYONE 🔴🔴🔴
+        const API_URL = "https://script.google.com/macros/s/AKfycbzNwQV8o1Zzg6YPOPkprVvJiChiFS5J-8mEux2bvbgnaqyjVEswKZfXTB9kqNX1AdqrsQ/exec";
     </script>
 
     <style>
         :root { --primary: #2563eb; --bg: #f3f4f6; --sidebar: #1e293b; }
         body { background-color: var(--bg); font-family: 'Poppins', sans-serif; color: #334155; }
         .hidden { display: none !important; }
-        
-        /* Sidebar & Layout */
         .sidebar { min-height: 100vh; background-color: var(--sidebar); color: white; padding: 20px; }
-        .nav-link { color: #94a3b8; margin: 8px 0; border-radius: 8px; transition: 0.3s; cursor: pointer; }
+        .nav-link { color: #94a3b8; margin: 8px 0; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .nav-link:hover, .nav-link.active { background: #334155; color: white; padding-left: 15px; }
-        .nav-link i { width: 25px; }
-        
-        /* Cards */
-        .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-left: 5px solid var(--primary); }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; border-left: 5px solid var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .card-custom { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        
-        /* Table */
-        .table-custom thead { background: #f8fafc; color: #64748b; font-size: 0.85rem; text-transform: uppercase; }
         .badge-status { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
         .bg-pending { background: #fef3c7; color: #d97706; }
         .bg-approved { background: #dcfce7; color: #166534; }
@@ -42,13 +34,10 @@
 
     <div id="view-login" class="d-flex align-items-center justify-content-center vh-100 bg-white">
         <div class="card p-5 border-0 shadow-lg" style="width: 400px;">
-            <div class="text-center mb-4">
-                <i class="fas fa-fingerprint fa-3x text-primary"></i>
-                <h4 class="mt-3 fw-bold">Admin Portal</h4>
-            </div>
-            <input type="text" id="login-user" class="form-control form-control-lg mb-3" placeholder="Username">
-            <input type="password" id="login-pass" class="form-control form-control-lg mb-4" placeholder="Password">
-            <button onclick="doLogin()" id="btn-login" class="btn btn-primary btn-lg w-100">Login</button>
+            <div class="text-center mb-4"><i class="fas fa-fingerprint fa-3x text-primary"></i><h4 class="mt-3 fw-bold">Admin Portal</h4></div>
+            <input type="text" id="login-user" class="form-control mb-3" placeholder="Username">
+            <input type="password" id="login-pass" class="form-control mb-4" placeholder="Password">
+            <button onclick="doLogin()" id="btn-login" class="btn btn-primary w-100">Login</button>
         </div>
     </div>
 
@@ -56,140 +45,67 @@
         <div class="row">
             <div class="col-md-2 sidebar">
                 <h5 class="fw-bold mb-5"><i class="fas fa-cube me-2"></i> HR System</h5>
-                <div class="mb-4 px-2">
-                    <small class="text-secondary text-uppercase">Menu</small>
-                    <nav class="nav flex-column mt-2">
-                        <a class="nav-link active" onclick="nav('home')"><i class="fas fa-chart-pie"></i> Dashboard</a>
-                        
-                        <div id="menu-emp" class="hidden">
-                            <a class="nav-link" onclick="nav('new-req')"><i class="fas fa-plus-circle"></i> New Request</a>
-                            <a class="nav-link" onclick="nav('my-req')"><i class="fas fa-history"></i> My History</a>
-                        </div>
-
-                        <div id="menu-admin" class="hidden">
-                            <a class="nav-link" onclick="nav('admin-req')"><i class="fas fa-tasks"></i> Requests Manager</a>
-                            <a class="nav-link" onclick="nav('settings')"><i class="fas fa-sliders-h"></i> Rules & Settings</a>
-                        </div>
-                    </nav>
-                </div>
-                <div class="mt-auto border-top border-secondary pt-3">
-                    <div class="d-flex align-items-center">
-                        <div class="avatar bg-primary rounded-circle text-center text-white me-2" style="width:40px; height:40px; line-height:40px;" id="u-initials">U</div>
-                        <div>
-                            <div class="fw-bold text-white" id="u-name">User</div>
-                            <small class="text-secondary" id="u-role">Role</small>
-                        </div>
+                <nav class="nav flex-column">
+                    <a class="nav-link active" onclick="nav('home')"><i class="fas fa-chart-pie me-2"></i> Dashboard</a>
+                    <div id="menu-emp" class="hidden">
+                        <a class="nav-link" onclick="nav('new-req')"><i class="fas fa-plus-circle me-2"></i> New Request</a>
+                        <a class="nav-link" onclick="nav('my-req')"><i class="fas fa-history me-2"></i> My History</a>
                     </div>
-                    <button onclick="location.reload()" class="btn btn-outline-secondary btn-sm w-100 mt-3">Logout</button>
-                </div>
+                    <div id="menu-admin" class="hidden">
+                        <a class="nav-link" onclick="nav('admin-req')"><i class="fas fa-tasks me-2"></i> Requests</a>
+                        <a class="nav-link" onclick="nav('settings')"><i class="fas fa-sliders-h me-2"></i> Settings & Rules</a>
+                    </div>
+                </nav>
+                <div class="mt-auto pt-5"><button onclick="location.reload()" class="btn btn-outline-secondary btn-sm w-100">Logout</button></div>
             </div>
 
             <div class="col-md-10 p-4" style="height: 100vh; overflow-y: auto;">
                 
                 <div id="page-home" class="page-section">
-                    <h3 class="fw-bold mb-4">Dashboard Overview</h3>
-                    
+                    <h3 class="fw-bold mb-4">Dashboard</h3>
                     <div id="admin-stats" class="row g-3 mb-4 hidden">
-                        <div class="col-md-3">
-                            <div class="stat-card" style="border-color: #3b82f6;">
-                                <h2 class="fw-bold mb-0" id="stat-total">0</h2>
-                                <small class="text-muted">Total Requests</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-card" style="border-color: #f59e0b;">
-                                <h2 class="fw-bold mb-0" id="stat-pending">0</h2>
-                                <small class="text-muted">Pending Review</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-card" style="border-color: #10b981;">
-                                <h2 class="fw-bold mb-0" id="stat-approved">0</h2>
-                                <small class="text-muted">Approved</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-card" style="border-color: #ef4444;">
-                                <h2 class="fw-bold mb-0" id="stat-rejected">0</h2>
-                                <small class="text-muted">Rejected</small>
-                            </div>
-                        </div>
+                        <div class="col-md-3"><div class="stat-card border-primary"><h2 class="fw-bold mb-0" id="stat-total">0</h2><small class="text-muted">Total Requests</small></div></div>
+                        <div class="col-md-3"><div class="stat-card border-warning" style="border-color:#f59e0b!important"><h2 class="fw-bold mb-0" id="stat-pending">0</h2><small class="text-muted">Pending</small></div></div>
+                        <div class="col-md-3"><div class="stat-card border-success" style="border-color:#10b981!important"><h2 class="fw-bold mb-0" id="stat-approved">0</h2><small class="text-muted">Approved</small></div></div>
+                        <div class="col-md-3"><div class="stat-card border-danger" style="border-color:#ef4444!important"><h2 class="fw-bold mb-0" id="stat-rejected">0</h2><small class="text-muted">Rejected</small></div></div>
                     </div>
-
-                    <div class="card-custom">
-                        <h5>👋 Welcome back!</h5>
-                        <p class="text-muted">Use the sidebar to navigate. Check the calendar availability before submitting new requests.</p>
-                    </div>
+                    <div class="card-custom"><h5>👋 Welcome back!</h5><p class="text-muted">Check the calendar availability before submitting new requests.</p></div>
                 </div>
 
                 <div id="page-new-req" class="page-section hidden">
                     <h3 class="fw-bold mb-4">Book a Leave</h3>
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="card-custom"><div id="calendar"></div></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card-custom bg-white">
-                                <h6>Legend</h6>
-                                <div class="d-flex align-items-center mb-2"><span class="badge bg-white border text-dark me-2">White</span> Available</div>
-                                <div class="d-flex align-items-center"><span class="badge bg-danger bg-opacity-10 text-danger me-2">Red</span> Full / Closed</div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="card-custom"><div id="calendar"></div></div>
                 </div>
 
                 <div id="page-my-req" class="page-section hidden">
                     <h3 class="fw-bold mb-4">My History</h3>
-                    <div class="card-custom">
-                        <table class="table table-custom table-hover">
-                            <thead><tr><th>Dates</th><th>Type</th><th>Status</th></tr></thead>
-                            <tbody id="tb-my-req"></tbody>
-                        </table>
-                    </div>
+                    <div class="card-custom"><table class="table"><tbody id="tb-my-req"></tbody></table></div>
                 </div>
 
                 <div id="page-admin-req" class="page-section hidden">
                     <h3 class="fw-bold mb-4">Manage Requests</h3>
-                    <div class="card-custom">
-                        <table class="table table-custom align-middle">
-                            <thead><tr><th>Employee</th><th>Period</th><th>Type</th><th>Status</th><th>Actions</th></tr></thead>
-                            <tbody id="tb-admin-req"></tbody>
-                        </table>
-                    </div>
+                    <div class="card-custom"><table class="table align-middle"><thead><tr><th>Employee</th><th>Dates</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tb-admin-req"></tbody></table></div>
                 </div>
 
                 <div id="page-settings" class="page-section hidden">
                     <h3 class="fw-bold mb-4">System Rules</h3>
-                    
                     <div class="row">
                         <div class="col-md-4">
-                            <div class="card-custom border border-primary border-opacity-25">
-                                <h5 class="text-primary mb-3"><i class="fas fa-globe"></i> Default Limit</h5>
-                                <p class="small text-muted">The max number of employees allowed on leave per day (Normal days).</p>
-                                <div class="input-group">
-                                    <input type="number" id="default-limit" class="form-control" placeholder="e.g. 2">
-                                    <button onclick="updateDefault()" class="btn btn-primary">Update</button>
-                                </div>
+                            <div class="card-custom border-primary border">
+                                <h6 class="text-primary mb-3">Default Daily Limit</h6>
+                                <div class="input-group"><input type="number" id="default-limit" class="form-control" placeholder="2"><button onclick="updateDefault()" class="btn btn-primary">Update</button></div>
                             </div>
-
-                            <div class="card-custom mt-3">
-                                <h5 class="mb-3"><i class="fas fa-plus-circle"></i> Add Season</h5>
-                                <label class="small text-muted">Start</label><input type="date" id="s-start" class="form-control mb-2">
-                                <label class="small text-muted">End</label><input type="date" id="s-end" class="form-control mb-2">
-                                <label class="small text-muted">Limit (0 = Block)</label><input type="number" id="s-limit" class="form-control mb-3">
+                            <div class="card-custom">
+                                <h6>Add New Season</h6>
+                                <input type="date" id="s-start" class="form-control mb-2"><input type="date" id="s-end" class="form-control mb-2">
+                                <input type="number" id="s-limit" class="form-control mb-2" placeholder="Limit (0=Block)">
                                 <button onclick="saveSeason()" class="btn btn-dark w-100">Add Rule</button>
                             </div>
                         </div>
-
                         <div class="col-md-8">
                             <div class="card-custom">
-                                <h5 class="mb-3"><i class="fas fa-list"></i> Active Seasonal Rules</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-custom">
-                                        <thead><tr><th>Start Date</th><th>End Date</th><th>Limit</th><th>Action</th></tr></thead>
-                                        <tbody id="tb-settings"></tbody>
-                                    </table>
-                                </div>
+                                <h6>Active Rules</h6>
+                                <table class="table"><thead><tr><th>Start</th><th>End</th><th>Limit</th><th>Action</th></tr></thead><tbody id="tb-settings"></tbody></table>
                             </div>
                         </div>
                     </div>
@@ -199,220 +115,114 @@
         </div>
     </div>
 
-    <div class="modal fade" id="reqModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-light"><h5 class="modal-title">Confirm Request</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <label class="small text-muted">Start</label><input type="text" id="m-start" class="form-control mb-2" readonly>
-                    <label class="small text-muted">End</label><input type="date" id="m-end" class="form-control mb-2">
-                    <label class="small text-muted">Type</label><select id="m-type" class="form-select"><option>Annual Leave</option><option>Sick Leave</option></select>
-                </div>
-                <div class="modal-footer"><button onclick="sendReq()" class="btn btn-primary w-100">Submit Request</button></div>
-            </div>
-        </div>
-    </div>
+    <div class="modal fade" id="reqModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Confirm</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="m-start" class="form-control mb-2" readonly><input type="date" id="m-end" class="form-control mb-2"><select id="m-type" class="form-select"><option>Annual</option><option>Sick</option></select></div><div class="modal-footer"><button onclick="sendReq()" class="btn btn-primary w-100">Submit</button></div></div></div></div>
 
     <script>
-        let DATA = {};
-        let calendarObj = null;
+        let DATA = {}; let calendarObj = null;
 
-        // API Helper
         async function apiCall(payload) {
             const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
             return await res.json();
         }
 
         async function doLogin() {
-            const u = document.getElementById('login-user').value;
-            const p = document.getElementById('login-pass').value;
-            const btn = document.getElementById('btn-login');
-            btn.innerText = "Checking..."; btn.disabled = true;
-
+            const u = document.getElementById('login-user').value; const p = document.getElementById('login-pass').value;
+            const btn = document.getElementById('btn-login'); btn.innerText = "Loading..."; btn.disabled = true;
             try {
                 const res = await apiCall({ action: 'login', username: u, password: p });
-                if(res.success) {
-                    DATA = res;
-                    initApp();
-                } else {
-                    Swal.fire('Error', res.message, 'error');
-                }
-            } catch(e) { Swal.fire('Error', 'Connection failed', 'error'); }
+                if(res.success) { DATA = res; initApp(); } else { Swal.fire('Error', res.message, 'error'); }
+            } catch(e) { Swal.fire('Connection Failed', 'Check URL or Permissions', 'error'); }
             btn.innerText = "Login"; btn.disabled = false;
         }
 
         function initApp() {
-            document.getElementById('view-login').classList.add('hidden');
-            document.getElementById('view-app').classList.remove('hidden');
-            document.getElementById('u-name').innerText = DATA.user.name;
-            document.getElementById('u-role').innerText = DATA.user.role;
-            document.getElementById('u-initials').innerText = DATA.user.name.charAt(0);
-
+            document.getElementById('view-login').classList.add('hidden'); document.getElementById('view-app').classList.remove('hidden');
+            document.getElementById('u-name').innerText = DATA.user.name || 'User';
+            
             if(DATA.user.role === 'Admin') {
                 document.getElementById('menu-admin').classList.remove('hidden');
                 document.getElementById('admin-stats').classList.remove('hidden');
-                updateAdminDashboard();
-                renderSettingsTable();
-            } else {
-                document.getElementById('menu-emp').classList.remove('hidden');
-            }
-
-            renderMy();
-            initCalendar();
-            nav('home');
+                updateDash(); renderSettings();
+            } else { document.getElementById('menu-emp').classList.remove('hidden'); }
+            
+            renderMy(); initCalendar(); nav('home');
         }
 
         function nav(id) {
             document.querySelectorAll('.page-section').forEach(e => e.classList.add('hidden'));
             document.getElementById('page-'+id).classList.remove('hidden');
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            event.target.closest('.nav-link').classList.add('active'); // Highlight
             if(id === 'new-req' && calendarObj) setTimeout(() => calendarObj.render(), 200);
         }
 
-        // --- DASHBOARD LOGIC ---
-        function updateAdminDashboard() {
-            const reqs = DATA.allRequests || [];
-            document.getElementById('stat-total').innerText = reqs.length;
-            document.getElementById('stat-pending').innerText = reqs.filter(r => r.status === 'Pending').length;
-            document.getElementById('stat-approved').innerText = reqs.filter(r => r.status === 'Approved').length;
-            document.getElementById('stat-rejected').innerText = reqs.filter(r => r.status === 'Rejected').length;
-            renderAdminReqs();
+        function updateDash() {
+            const r = DATA.allRequests || [];
+            document.getElementById('stat-total').innerText = r.length;
+            document.getElementById('stat-pending').innerText = r.filter(x => x.status === 'Pending').length;
+            document.getElementById('stat-approved').innerText = r.filter(x => x.status === 'Approved').length;
+            document.getElementById('stat-rejected').innerText = r.filter(x => x.status === 'Rejected').length;
+            
+            const tbody = document.getElementById('tb-admin-req');
+            tbody.innerHTML = r.map(x => `<tr><td>${x.name}</td><td>${x.start}</td><td><span class="badge-status bg-${x.status.toLowerCase()}">${x.status}</span></td>
+            <td>${x.status==='Pending' ? `<button onclick="admAct('${x.id}','Approved')" class="btn btn-sm btn-success">✔</button> <button onclick="admAct('${x.id}','Rejected')" class="btn btn-sm btn-danger">✘</button>`:''}</td></tr>`).join('');
         }
 
-        // --- SETTINGS LOGIC ---
-        function renderSettingsTable() {
-            // Find Default
+        function renderSettings() {
             const def = DATA.settings.find(s => s.type === 'Default');
             if(def) document.getElementById('default-limit').value = def.limit;
-
-            // Render Seasons (skip the Default row which is usually index 0)
-            // Note: In backend we slice(1), so here seasons are mixed. 
-            // Better to filter by type 'Season'
-            const seasons = DATA.settings.filter(s => s.type === 'Season');
-            const tbody = document.getElementById('tb-settings');
             
-            tbody.innerHTML = seasons.map((s, index) => `
-                <tr>
-                    <td>${s.start}</td>
-                    <td>${s.end}</td>
-                    <td><span class="badge bg-secondary">${s.limit}</span></td>
-                    <td>
-                        <button onclick="deleteRule(${index})" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+            const seasons = DATA.settings.filter(s => s.type === 'Season');
+            document.getElementById('tb-settings').innerHTML = seasons.map((s, i) => `
+                <tr><td>${s.start}</td><td>${s.end}</td><td>${s.limit}</td>
+                <td><button onclick="delRule(${i})" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button></td></tr>`).join('');
         }
 
         async function updateDefault() {
-            const val = document.getElementById('default-limit').value;
-            await apiCall({ action: 'updateDefault', limit: val });
-            Swal.fire('Updated', 'Default limit updated.', 'success');
+            await apiCall({ action: 'updateDefault', limit: document.getElementById('default-limit').value });
+            Swal.fire('Updated', '', 'success');
         }
 
         async function saveSeason() {
-            const s = document.getElementById('s-start').value;
-            const e = document.getElementById('s-end').value;
-            const l = document.getElementById('s-limit').value;
-            await apiCall({ action: 'saveSeason', start: s, end: e, limit: l });
-            Swal.fire('Saved', 'New rule added.', 'success');
-            // Reload settings (In real app, we should re-fetch data, here we just reload page or add manually)
-            // For simplicity, let's ask user to refresh or we can re-login silently.
+            await apiCall({ action: 'saveSeason', start: document.getElementById('s-start').value, end: document.getElementById('s-end').value, limit: document.getElementById('s-limit').value });
+            Swal.fire('Saved', 'Refresh to see changes', 'success');
         }
 
-        async function deleteRule(index) {
-            // NOTE: The index here must match the real row in sheet.
-            // Since we filtered 'Season', passing array index might be risky if we have mixed rows.
-            // For this version, let's assume seasons are appended after Default.
-            // A safer way is to delete by ID, but for now we pass index.
-            
-            Swal.fire({ title: 'Delete?', showCancelButton: true }).then(async (res) => {
-                if(res.isConfirmed) {
-                    await apiCall({ action: 'deleteSetting', index: index }); 
-                    // Note: This index logic assumes seasons are sequential in the sheet.
-                    // If you delete row 5, row 6 becomes 5. Reloading data is best.
-                    Swal.fire('Deleted', 'Rule removed. Please refresh to see changes.', 'success');
-                }
-            });
+        async function delRule(idx) {
+            if(confirm('Delete rule?')) { await apiCall({ action: 'deleteSetting', index: idx }); Swal.fire('Deleted', 'Refresh to see changes', 'success'); }
         }
 
-        // --- CALENDAR & REQS ---
         function initCalendar() {
             calendarObj = new FullCalendar.Calendar(document.getElementById('calendar'), {
                 initialView: 'dayGridMonth', height: 500,
                 dayCellClassNames: (arg) => {
                     if (arg.date < new Date().setHours(0,0,0,0)) return [];
                     const d = arg.date.toISOString().split('T')[0];
-                    const lim = getLimit(d);
-                    const cnt = getCount(d);
-                    return (lim === 0 || cnt >= lim) ? ['fc-day-full', 'bg-danger', 'bg-opacity-10'] : ['fc-day-ok'];
+                    const lim = getLim(d); const cnt = getCnt(d);
+                    return (lim === 0 || cnt >= lim) ? ['bg-danger','bg-opacity-10'] : [];
                 },
                 dateClick: (info) => {
-                    if (info.date < new Date().setHours(0,0,0,0)) return;
-                    const d = info.dateStr;
-                    if(getLimit(d) === 0 || getCount(d) >= getLimit(d)) return Swal.fire('Full','','warning');
-                    document.getElementById('m-start').value = d;
-                    document.getElementById('m-end').value = d;
+                    const d = info.dateStr; if(getLim(d)===0 || getCnt(d)>=getLim(d)) return Swal.fire('Full','','warning');
+                    document.getElementById('m-start').value = d; document.getElementById('m-end').value = d;
                     new bootstrap.Modal(document.getElementById('reqModal')).show();
                 }
             });
             calendarObj.render();
         }
 
-        function getLimit(d) {
-            let date = new Date(d);
-            let s = DATA.settings.find(s => s.type === 'Season' && date >= new Date(s.start) && date <= new Date(s.end));
+        function getLim(d) {
+            let dt = new Date(d);
+            let s = DATA.settings.find(x => x.type==='Season' && dt>=new Date(x.start) && dt<=new Date(x.end));
             if(s) return s.limit;
-            let def = DATA.settings.find(s => s.type === 'Default');
-            return def ? def.limit : 2;
+            let def = DATA.settings.find(x => x.type==='Default'); return def ? def.limit : 2;
         }
-
-        function getCount(d) {
-            let t = new Date(d);
-            return DATA.approvedRequests.filter(r => t >= new Date(r.start) && t <= new Date(r.end)).length;
-        }
-
+        function getCnt(d) { let t=new Date(d); return DATA.approvedRequests.filter(r => t>=new Date(r.start) && t<=new Date(r.end)).length; }
+        
         async function sendReq() {
-            await apiCall({
-                action: 'submitRequest',
-                form: {
-                    username: DATA.user.username, name: DATA.user.name,
-                    start: document.getElementById('m-start').value,
-                    end: document.getElementById('m-end').value,
-                    type: document.getElementById('m-type').value
-                }
-            });
-            bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide();
-            Swal.fire('Sent', 'Request submitted.', 'success');
+            await apiCall({ action: 'submitRequest', form: { username: DATA.user.username, name: DATA.user.name, start: document.getElementById('m-start').value, end: document.getElementById('m-end').value, type: document.getElementById('m-type').value } });
+            bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide(); Swal.fire('Sent','','success');
         }
-
-        function renderAdminReqs() {
-            const tbody = document.getElementById('tb-admin-req');
-            tbody.innerHTML = (DATA.allRequests||[]).map(r => `
-                <tr>
-                    <td><div class="fw-bold">${r.name}</div><small class="text-muted">${r.username}</small></td>
-                    <td>${r.start} <i class="fas fa-arrow-right small mx-1"></i> ${r.end}</td>
-                    <td>${r.type}</td>
-                    <td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td>
-                    <td>
-                        ${r.status === 'Pending' ? `
-                        <button onclick="admAct('${r.id}','Approved')" class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
-                        <button onclick="admAct('${r.id}','Rejected')" class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>` : ''}
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        async function admAct(id, act) {
-            await apiCall({ action: 'adminAction', id: id, act: act });
-            Swal.fire('Done', 'Updated', 'success');
-        }
-
-        function renderMy() {
-            document.getElementById('tb-my-req').innerHTML = (DATA.myRequests||[]).map(r => `
-                <tr><td>${r.start} / ${r.end}</td><td>${r.type}</td><td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td></tr>
-            `).join('');
-        }
+        
+        async function admAct(id, act) { await apiCall({ action: 'adminAction', id: id, act: act }); Swal.fire('Done','','success'); }
+        function renderMy() { document.getElementById('tb-my-req').innerHTML = (DATA.myRequests||[]).map(r => `<tr><td>${r.start}</td><td>${r.type}</td><td>${r.status}</td></tr>`).join(''); }
     </script>
 </body>
 </html>
