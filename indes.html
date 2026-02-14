@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // 🔴🔴🔴 PUT YOUR GOOGLE SCRIPT URL HERE 🔴🔴🔴
+        const API_URL = "https://script.google.com/macros/s/AKfycbyxS6ECeugLmbHcJDbOXg4SR32WPVD_enwB5wtm-E47EZxEJezPL8K7QIVlpKx3VnK2YQ/exec";
+    </script>
+
+    <style>
+        :root { --primary: #4e73df; --bg: #f8f9fc; }
+        body { background-color: var(--bg); font-family: 'Poppins', sans-serif; }
+        .hidden { display: none !important; }
+        .sidebar { min-height: 100vh; background: linear-gradient(180deg, #4e73df 10%, #224abe 100%); color: white; }
+        .nav-link { color: rgba(255,255,255,0.8); cursor: pointer; margin: 5px 0; }
+        .nav-link:hover, .nav-link.active { color: white; background: rgba(255,255,255,0.2); border-radius: 5px; }
+        .card-custom { border: none; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); background: white; padding: 20px; }
+        .fc-day-full { background-color: #ffebee !important; cursor: not-allowed; }
+        .fc-day-ok { background-color: white !important; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="view-login" class="d-flex align-items-center justify-content-center vh-100 bg-light">
+        <div class="card p-4 shadow border-0" style="width: 350px;">
+            <h4 class="text-center mb-4 text-primary">Login</h4>
+            <input type="text" id="login-user" class="form-control mb-3" placeholder="Username">
+            <input type="password" id="login-pass" class="form-control mb-3" placeholder="Password">
+            <button onclick="doLogin()" id="btn-login" class="btn btn-primary w-100">Sign In</button>
+        </div>
+    </div>
+
+    <div id="view-app" class="container-fluid hidden">
+        <div class="row">
+            <div class="col-md-2 sidebar p-3">
+                <h5 class="text-center mb-4">HR System</h5>
+                <div class="text-center mb-4"><i class="fas fa-user-circle fa-2x"></i><br><span id="u-name">User</span></div>
+                <nav class="nav flex-column">
+                    <a class="nav-link active" onclick="nav('home')">Dashboard</a>
+                    <div id="menu-emp"><a class="nav-link" onclick="nav('new-req')">New Request</a><a class="nav-link" onclick="nav('my-req')">My History</a></div>
+                    <div id="menu-admin" class="hidden"><a class="nav-link" onclick="nav('admin-req')">Manage Requests</a><a class="nav-link" onclick="nav('settings')">Settings</a></div>
+                    <hr>
+                    <a class="nav-link text-warning" onclick="location.reload()">Logout</a>
+                </nav>
+            </div>
+            <div class="col-md-10 p-4">
+                
+                <div id="page-home" class="page-section">
+                    <h3>Dashboard</h3>
+                    <div class="card-custom mt-3">Welcome to the Leave Management System. Check your balance and apply easily.</div>
+                </div>
+
+                <div id="page-new-req" class="page-section hidden">
+                    <h3>New Request</h3>
+                    <div class="card-custom mt-3"><div id="calendar"></div></div>
+                </div>
+
+                <div id="page-my-req" class="page-section hidden">
+                    <h3>My History</h3>
+                    <div class="card-custom mt-3"><table class="table"><tbody id="tb-my-req"></tbody></table></div>
+                </div>
+
+                <div id="page-admin-req" class="page-section hidden">
+                    <h3>All Requests</h3>
+                    <div class="card-custom mt-3"><table class="table"><thead class="table-light"><tr><th>Name</th><th>Dates</th><th>Status</th><th>Action</th></tr></thead><tbody id="tb-admin-req"></tbody></table></div>
+                </div>
+
+                <div id="page-settings" class="page-section hidden">
+                    <h3>Settings</h3>
+                    <div class="card-custom mt-3">
+                        <input type="date" id="s-start" class="form-control mb-2">
+                        <input type="date" id="s-end" class="form-control mb-2">
+                        <input type="number" id="s-limit" class="form-control mb-2" placeholder="Limit">
+                        <button onclick="saveSeason()" class="btn btn-primary">Save Rule</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="reqModal" tabindex="-1">
+        <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Request Leave</h5></div>
+        <div class="modal-body">
+            <input type="text" id="m-start" class="form-control mb-2" readonly>
+            <input type="date" id="m-end" class="form-control mb-2">
+            <select id="m-type" class="form-select"><option>Annual</option><option>Sick</option></select>
+        </div>
+        <div class="modal-footer"><button onclick="sendReq()" class="btn btn-primary">Submit</button></div></div></div>
+    </div>
+
+    <script>
+        let DATA = {};
+        let calendarObj = null;
+
+        // 🟢 UNIVERSAL API CALL FUNCTION
+        async function apiCall(payload) {
+            // Using POST to avoid URL length limits and caching
+            const res = await fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+            return await res.json();
+        }
+
+        async function doLogin() {
+            const u = document.getElementById('login-user').value;
+            const p = document.getElementById('login-pass').value;
+            const btn = document.getElementById('btn-login');
+            
+            btn.disabled = true; btn.innerText = "Loading...";
+            
+            try {
+                const res = await apiCall({ action: 'login', username: u, password: p });
+                if(res.success) {
+                    DATA = res;
+                    loadApp();
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch(e) { Swal.fire('Error', 'Connection failed', 'error'); }
+            
+            btn.disabled = false; btn.innerText = "Sign In";
+        }
+
+        function loadApp() {
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-app').classList.remove('hidden');
+            document.getElementById('u-name').innerText = DATA.user.name;
+            
+            if(DATA.user.role === 'Admin') {
+                document.getElementById('menu-admin').classList.remove('hidden');
+                renderAdmin();
+            } else {
+                document.getElementById('menu-emp').classList.remove('hidden');
+            }
+            renderMy();
+            initCalendar();
+            nav('home');
+        }
+
+        function nav(id) {
+            document.querySelectorAll('.page-section').forEach(e => e.classList.add('hidden'));
+            document.getElementById('page-'+id).classList.remove('hidden');
+            if(id === 'new-req' && calendarObj) setTimeout(() => calendarObj.render(), 200);
+        }
+
+        function initCalendar() {
+            calendarObj = new FullCalendar.Calendar(document.getElementById('calendar'), {
+                initialView: 'dayGridMonth', height: 500, selectable: true,
+                dayCellClassNames: (arg) => {
+                    if (arg.date < new Date().setHours(0,0,0,0)) return [];
+                    const d = arg.date.toISOString().split('T')[0];
+                    const lim = getLimit(d);
+                    const cnt = getCount(d);
+                    return (lim === 0 || cnt >= lim) ? ['fc-day-full'] : ['fc-day-ok'];
+                },
+                dateClick: (info) => {
+                    if (info.date < new Date().setHours(0,0,0,0)) return;
+                    const d = info.dateStr;
+                    if(getLimit(d) === 0 || getCount(d) >= getLimit(d)) return Swal.fire('Full','','warning');
+                    document.getElementById('m-start').value = d;
+                    document.getElementById('m-end').value = d;
+                    new bootstrap.Modal(document.getElementById('reqModal')).show();
+                }
+            });
+            calendarObj.render();
+        }
+
+        function getLimit(d) {
+            let date = new Date(d);
+            let s = DATA.settings.find(s => s.type === 'Season' && date >= new Date(s.start) && date <= new Date(s.end));
+            if(s) return s.limit;
+            let def = DATA.settings.find(s => s.type === 'Default');
+            return def ? def.limit : 2;
+        }
+
+        function getCount(d) {
+            let target = new Date(d);
+            return DATA.approvedRequests.filter(r => target >= new Date(r.start) && target <= new Date(r.end)).length;
+        }
+
+        async function sendReq() {
+            const payload = {
+                action: 'submitRequest',
+                form: {
+                    username: DATA.user.username, name: DATA.user.name,
+                    start: document.getElementById('m-start').value,
+                    end: document.getElementById('m-end').value,
+                    type: document.getElementById('m-type').value
+                }
+            };
+            await apiCall(payload);
+            Swal.fire('Success', 'Request Sent', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide();
+        }
+
+        async function adminAction(id, act) {
+            await apiCall({ action: 'adminAction', id: id, act: act });
+            Swal.fire('Done', 'Updated', 'success');
+        }
+        
+        async function saveSeason() {
+            await apiCall({ 
+                action: 'saveSeason', 
+                start: document.getElementById('s-start').value, 
+                end: document.getElementById('s-end').value, 
+                limit: document.getElementById('s-limit').value 
+            });
+            Swal.fire('Saved', '', 'success');
+        }
+
+        function renderMy() {
+            document.getElementById('tb-my-req').innerHTML = (DATA.myRequests||[]).map(r => 
+                `<tr><td>${r.start} to ${r.end}</td><td>${r.type}</td><td>${r.status}</td></tr>`
+            ).join('');
+        }
+
+        function renderAdmin() {
+            document.getElementById('tb-admin-req').innerHTML = (DATA.allRequests||[]).map(r => 
+                `<tr><td>${r.name}</td><td>${r.start}</td><td>${r.status}</td>
+                <td><button onclick="adminAction('${r.id}','Approved')" class="btn btn-sm btn-success">✔</button> 
+                <button onclick="adminAction('${r.id}','Rejected')" class="btn btn-sm btn-danger">✘</button></td></tr>`
+            ).join('');
+        }
+    </script>
+</body>
+</html>
