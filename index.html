@@ -868,25 +868,38 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Logging in...';
             btn.disabled = true;
 
+            // المرحلة الأولى: الاتصال بالسيرفر
             try {
                 const res = await apiCall({ action: 'login', username: u, password: p });
                 
                 if (res.success) {
-                    DATA = res;
-                    initApp();
+                    DATA = res; // تم حفظ البيانات بنجاح
                 } else {
                     Swal.fire('Login Failed', res.message, 'error');
+                    btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i> Login';
+                    btn.disabled = false;
+                    return; // توقف هنا إذا كان الباسورد خطأ
                 }
             } catch (e) {
+                // هذا هو خطأ الاتصال الحقيقي
+                console.error("Network Error:", e);
                 Swal.fire({
                     icon: 'error',
                     title: 'Connection Failed',
-                    text: 'Cannot connect to server. Please check your API URL.',
-                    footer: '<a href="https://script.google.com/home" target="_blank">Verify your deployment</a>'
+                    text: 'Cannot connect to Google Script. Check API URL.',
                 });
-            } finally {
                 btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i> Login';
                 btn.disabled = false;
+                return;
+            }
+
+            // المرحلة الثانية: رسم الشاشة (أي خطأ هنا لن يعتبر فشل اتصال)
+            try {
+                initApp();
+            } catch (e) {
+                console.error("UI Rendering Error:", e);
+                // لن نظهر رسالة خطأ للمستخدم لأن الدخول نجح، فقط سننبه في الكونسول
+                // هذا سيمنع ظهور رسالة "Connection Failed" بالخطأ
             }
         }
 
