@@ -3,109 +3,758 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HR Admin Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>HR Leave Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 🔴🔴🔴 ضع رابط السكربت الجديد هنا وتأكد من نشره بصلاحية ANYONE 🔴🔴🔴
-        const API_URL = "https://script.google.com/macros/s/AKfycbxl3AK0VzFp4BH2FUtsbzkONta-YHd0E1lzxNVQv2MjtafVmWcavw3MXAAt4ut_k-1qlA/exec";
+        // 🔴🔴🔴 IMPORTANT: Replace with your deployed Google Apps Script URL 🔴🔴🔴
+        const API_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
     </script>
 
     <style>
-        :root { --primary: #2563eb; --bg: #f3f4f6; --sidebar: #1e293b; }
-        body { background-color: var(--bg); font-family: 'Poppins', sans-serif; color: #334155; }
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --sidebar: #1e293b;
+            --card-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg);
+            font-family: 'Poppins', sans-serif;
+            color: #334155;
+            overflow-x: hidden;
+        }
+
         .hidden { display: none !important; }
-        .sidebar { min-height: 100vh; background-color: var(--sidebar); color: white; padding: 20px; }
-        .nav-link { color: #94a3b8; margin: 8px 0; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        .nav-link:hover, .nav-link.active { background: #334155; color: white; padding-left: 15px; }
-        .stat-card { background: white; border-radius: 12px; padding: 20px; border-left: 5px solid var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .card-custom { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .badge-status { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-        .bg-pending { background: #fef3c7; color: #d97706; }
-        .bg-approved { background: #dcfce7; color: #166534; }
-        .bg-rejected { background: #fee2e2; color: #991b1b; }
+
+        /* ===== Loading Overlay ===== */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spinner-large {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ===== Login View ===== */
+        #view-login {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .login-icon i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        /* ===== Sidebar ===== */
+        .sidebar {
+            min-height: 100vh;
+            background: var(--sidebar);
+            color: white;
+            padding: 25px 20px;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-header h5 {
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .user-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .user-info .balance-badge {
+            background: var(--success);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .nav-link {
+            color: #94a3b8;
+            margin: 5px 0;
+            padding: 12px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .nav-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* ===== Main Content ===== */
+        .main-content {
+            padding: 30px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .page-header h3 {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .page-header .subtitle {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        /* ===== Cards ===== */
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            border-left: 5px solid;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card h2 {
+            font-weight: 700;
+            margin-bottom: 5px;
+            font-size: 2.5rem;
+        }
+
+        .stat-card small {
+            color: #64748b;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-custom {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 25px;
+        }
+
+        /* ===== Status Badges ===== */
+        .badge-status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bg-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .bg-approved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .bg-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* ===== Tables ===== */
+        .table-custom {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table-custom thead {
+            background: var(--bg);
+        }
+
+        .table-custom thead th {
+            padding: 15px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            color: #64748b;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .table-custom tbody td {
+            padding: 15px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .table-custom tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* ===== Buttons ===== */
+        .btn-custom {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary-custom {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary-custom:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-icon {
+            width: 35px;
+            height: 35px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        /* ===== Calendar Customization ===== */
+        #calendar {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .fc .fc-button-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .fc .fc-button-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+
+        .fc-daygrid-day {
+            cursor: pointer;
+        }
+
+        .fc-daygrid-day.fc-day-past {
+            background: #f8fafc;
+            opacity: 0.6;
+        }
+
+        .fc-daygrid-day.day-blocked {
+            background: #fee2e2 !important;
+            cursor: not-allowed;
+        }
+
+        .fc-daygrid-day.day-limited {
+            background: #fef3c7 !important;
+        }
+
+        /* ===== Forms ===== */
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            padding: 12px 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* ===== Modal Customization ===== */
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            border-bottom: 2px solid #f1f5f9;
+            padding: 20px 30px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-footer {
+            border-top: 2px solid #f1f5f9;
+            padding: 20px 30px;
+        }
+
+        /* ===== Alert Box ===== */
+        .alert-custom {
+            border-radius: 15px;
+            padding: 20px;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert-custom i {
+            font-size: 1.5rem;
+        }
+
+        .alert-info-custom {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .alert-success-custom {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+                position: relative;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .stat-card h2 {
+                font-size: 2rem;
+            }
+        }
+
+        /* ===== Custom Scrollbar ===== */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
 <body>
 
-    <div id="view-login" class="d-flex align-items-center justify-content-center vh-100 bg-white">
-        <div class="card p-5 border-0 shadow-lg" style="width: 400px;">
-            <div class="text-center mb-4"><i class="fas fa-fingerprint fa-3x text-primary"></i><h4 class="mt-3 fw-bold">Admin Portal</h4></div>
-            <input type="text" id="login-user" class="form-control mb-3" placeholder="Username">
-            <input type="password" id="login-pass" class="form-control mb-4" placeholder="Password">
-            <button onclick="doLogin()" id="btn-login" class="btn btn-primary w-100">Login</button>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner-large"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- LOGIN VIEW -->
+    <!-- ============================================ -->
+    <div id="view-login">
+        <div class="login-card">
+            <div class="login-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <h4 class="text-center fw-bold mb-2">HR Leave Management</h4>
+            <p class="text-center text-muted mb-4">Sign in to your account</p>
+            
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" id="login-user" class="form-control" placeholder="Enter your username">
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Password</label>
+                <input type="password" id="login-pass" class="form-control" placeholder="Enter your password">
+            </div>
+            <button onclick="doLogin()" id="btn-login" class="btn btn-primary-custom w-100 btn-custom">
+                <i class="fas fa-sign-in-alt me-2"></i> Login
+            </button>
         </div>
     </div>
 
+    <!-- ============================================ -->
+    <!-- MAIN APPLICATION VIEW -->
+    <!-- ============================================ -->
     <div id="view-app" class="container-fluid hidden">
         <div class="row">
+            
+            <!-- SIDEBAR -->
             <div class="col-md-2 sidebar">
-                <h5 class="fw-bold mb-5"><i class="fas fa-cube me-2"></i> HR System</h5>
-                <nav class="nav flex-column">
-                    <a class="nav-link active" onclick="nav('home')"><i class="fas fa-chart-pie me-2"></i> Dashboard</a>
-                    <div id="menu-emp" class="hidden">
-                        <a class="nav-link" onclick="nav('new-req')"><i class="fas fa-plus-circle me-2"></i> New Request</a>
-                        <a class="nav-link" onclick="nav('my-req')"><i class="fas fa-history me-2"></i> My History</a>
-                    </div>
-                    <div id="menu-admin" class="hidden">
-                        <a class="nav-link" onclick="nav('admin-req')"><i class="fas fa-tasks me-2"></i> Requests</a>
-                        <a class="nav-link" onclick="nav('settings')"><i class="fas fa-sliders-h me-2"></i> Settings & Rules</a>
-                    </div>
-                </nav>
-                <div class="mt-auto pt-5"><button onclick="location.reload()" class="btn btn-outline-secondary btn-sm w-100">Logout</button></div>
-            </div>
-
-            <div class="col-md-10 p-4" style="height: 100vh; overflow-y: auto;">
-                
-                <div id="page-home" class="page-section">
-                    <h3 class="fw-bold mb-4">Dashboard</h3>
-                    <div id="admin-stats" class="row g-3 mb-4 hidden">
-                        <div class="col-md-3"><div class="stat-card border-primary"><h2 class="fw-bold mb-0" id="stat-total">0</h2><small class="text-muted">Total Requests</small></div></div>
-                        <div class="col-md-3"><div class="stat-card border-warning" style="border-color:#f59e0b!important"><h2 class="fw-bold mb-0" id="stat-pending">0</h2><small class="text-muted">Pending</small></div></div>
-                        <div class="col-md-3"><div class="stat-card border-success" style="border-color:#10b981!important"><h2 class="fw-bold mb-0" id="stat-approved">0</h2><small class="text-muted">Approved</small></div></div>
-                        <div class="col-md-3"><div class="stat-card border-danger" style="border-color:#ef4444!important"><h2 class="fw-bold mb-0" id="stat-rejected">0</h2><small class="text-muted">Rejected</small></div></div>
-                    </div>
-                    <div class="card-custom"><h5>👋 Welcome back!</h5><p class="text-muted">Check the calendar availability before submitting new requests.</p></div>
-                </div>
-
-                <div id="page-new-req" class="page-section hidden">
-                    <h3 class="fw-bold mb-4">Book a Leave</h3>
-                    <div class="card-custom"><div id="calendar"></div></div>
-                </div>
-
-                <div id="page-my-req" class="page-section hidden">
-                    <h3 class="fw-bold mb-4">My History</h3>
-                    <div class="card-custom"><table class="table"><tbody id="tb-my-req"></tbody></table></div>
-                </div>
-
-                <div id="page-admin-req" class="page-section hidden">
-                    <h3 class="fw-bold mb-4">Manage Requests</h3>
-                    <div class="card-custom"><table class="table align-middle"><thead><tr><th>Employee</th><th>Dates</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tb-admin-req"></tbody></table></div>
-                </div>
-
-                <div id="page-settings" class="page-section hidden">
-                    <h3 class="fw-bold mb-4">System Rules</h3>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="card-custom border-primary border">
-                                <h6 class="text-primary mb-3">Default Daily Limit</h6>
-                                <div class="input-group"><input type="number" id="default-limit" class="form-control" placeholder="2"><button onclick="updateDefault()" class="btn btn-primary">Update</button></div>
-                            </div>
-                            <div class="card-custom">
-                                <h6>Add New Season</h6>
-                                <input type="date" id="s-start" class="form-control mb-2"><input type="date" id="s-end" class="form-control mb-2">
-                                <input type="number" id="s-limit" class="form-control mb-2" placeholder="Limit (0=Block)">
-                                <button onclick="saveSeason()" class="btn btn-dark w-100">Add Rule</button>
+                <div class="sidebar-header">
+                    <h5><i class="fas fa-cube me-2"></i> HR Portal</h5>
+                    <div class="user-info">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-user-circle fa-2x me-2"></i>
+                            <div>
+                                <div class="fw-semibold" id="u-name">User</div>
+                                <small class="text-muted" id="u-role">Role</small>
                             </div>
                         </div>
+                        <div id="balance-display" class="hidden">
+                            <span class="balance-badge">
+                                <i class="fas fa-calendar-check me-1"></i>
+                                <span id="u-balance">0</span> days left
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <nav class="nav flex-column mt-4">
+                    <a class="nav-link active" onclick="nav('home')">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    
+                    <!-- Employee Menu -->
+                    <div id="menu-emp" class="hidden">
+                        <a class="nav-link" onclick="nav('new-req')">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>New Request</span>
+                        </a>
+                        <a class="nav-link" onclick="nav('my-req')">
+                            <i class="fas fa-history"></i>
+                            <span>My Requests</span>
+                        </a>
+                    </div>
+                    
+                    <!-- Admin Menu -->
+                    <div id="menu-admin" class="hidden">
+                        <a class="nav-link" onclick="nav('admin-req')">
+                            <i class="fas fa-tasks"></i>
+                            <span>Manage Requests</span>
+                        </a>
+                        <a class="nav-link" onclick="nav('settings')">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
+                        </a>
+                        <a class="nav-link" onclick="exportData()">
+                            <i class="fas fa-download"></i>
+                            <span>Export Data</span>
+                        </a>
+                    </div>
+                </nav>
+
+                <div class="mt-auto pt-5">
+                    <button onclick="location.reload()" class="btn btn-outline-light btn-sm w-100">
+                        <i class="fas fa-sign-out-alt me-2"></i> Logout
+                    </button>
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT AREA -->
+            <div class="col-md-10 main-content">
+                
+                <!-- ===== HOME / DASHBOARD ===== -->
+                <div id="page-home" class="page-section">
+                    <div class="page-header">
+                        <h3>Dashboard</h3>
+                        <p class="subtitle">Overview of leave management system</p>
+                    </div>
+
+                    <!-- Admin Statistics -->
+                    <div id="admin-stats" class="row g-4 mb-4 hidden">
+                        <div class="col-md-3">
+                            <div class="stat-card" style="border-color: var(--primary);">
+                                <h2 class="text-primary" id="stat-total">0</h2>
+                                <small>Total Requests</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card" style="border-color: var(--warning);">
+                                <h2 class="text-warning" id="stat-pending">0</h2>
+                                <small>Pending</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card" style="border-color: var(--success);">
+                                <h2 class="text-success" id="stat-approved">0</h2>
+                                <small>Approved</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card" style="border-color: var(--danger);">
+                                <h2 class="text-danger" id="stat-rejected">0</h2>
+                                <small>Rejected</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Welcome Card -->
+                    <div class="card-custom">
+                        <div class="alert-custom alert-info-custom">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <h5 class="mb-1">👋 Welcome back!</h5>
+                                <p class="mb-0">Check the calendar availability before submitting new leave requests.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employee Quick Stats -->
+                    <div id="emp-quick-stats" class="hidden">
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="card-custom text-center">
+                                    <i class="fas fa-calendar-check fa-3x text-success mb-3"></i>
+                                    <h4 id="emp-approved">0</h4>
+                                    <small class="text-muted">Approved Leaves</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card-custom text-center">
+                                    <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+                                    <h4 id="emp-pending">0</h4>
+                                    <small class="text-muted">Pending Requests</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card-custom text-center">
+                                    <i class="fas fa-umbrella-beach fa-3x text-primary mb-3"></i>
+                                    <h4 id="emp-days-used">0</h4>
+                                    <small class="text-muted">Days Used</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== NEW REQUEST PAGE ===== -->
+                <div id="page-new-req" class="page-section hidden">
+                    <div class="page-header">
+                        <h3>Book a Leave</h3>
+                        <p class="subtitle">Select dates from the calendar below</p>
+                    </div>
+
+                    <div class="card-custom">
+                        <div class="alert-custom alert-success-custom mb-4">
+                            <i class="fas fa-lightbulb"></i>
+                            <div>
+                                <strong>Tips:</strong> Red dates are fully booked. Yellow dates have limited availability. 
+                                Click on available dates to submit your request.
+                            </div>
+                        </div>
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+
+                <!-- ===== MY REQUESTS PAGE ===== -->
+                <div id="page-my-req" class="page-section hidden">
+                    <div class="page-header">
+                        <h3>My Leave History</h3>
+                        <p class="subtitle">Track all your leave requests</p>
+                    </div>
+
+                    <div class="card-custom">
+                        <div class="table-responsive">
+                            <table class="table-custom">
+                                <thead>
+                                    <tr>
+                                        <th>Date Submitted</th>
+                                        <th>Leave Type</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Days</th>
+                                        <th>Status</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tb-my-req"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== ADMIN REQUESTS PAGE ===== -->
+                <div id="page-admin-req" class="page-section hidden">
+                    <div class="page-header">
+                        <h3>Manage Leave Requests</h3>
+                        <p class="subtitle">Review and approve/reject employee requests</p>
+                    </div>
+
+                    <div class="card-custom">
+                        <div class="table-responsive">
+                            <table class="table-custom">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Type</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Days</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tb-admin-req"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SETTINGS PAGE ===== -->
+                <div id="page-settings" class="page-section hidden">
+                    <div class="page-header">
+                        <h3>System Settings</h3>
+                        <p class="subtitle">Configure leave limits and seasonal rules</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <!-- Default Limit -->
+                            <div class="card-custom border border-primary">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-sliders-h me-2"></i> Default Daily Limit
+                                </h6>
+                                <p class="small text-muted mb-3">Maximum employees allowed on leave per day</p>
+                                <div class="input-group">
+                                    <input type="number" id="default-limit" class="form-control" placeholder="e.g., 2" min="0">
+                                    <button onclick="updateDefault()" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i> Update
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Add Season -->
+                            <div class="card-custom mt-4">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-calendar-plus me-2"></i> Add Seasonal Rule
+                                </h6>
+                                <p class="small text-muted mb-3">Define special limits for specific date ranges</p>
+                                
+                                <label class="form-label small">Start Date</label>
+                                <input type="date" id="s-start" class="form-control mb-3">
+                                
+                                <label class="form-label small">End Date</label>
+                                <input type="date" id="s-end" class="form-control mb-3">
+                                
+                                <label class="form-label small">Limit (0 = Block All)</label>
+                                <input type="number" id="s-limit" class="form-control mb-3" placeholder="e.g., 0" min="0">
+                                
+                                <button onclick="saveSeason()" class="btn btn-dark w-100 btn-custom">
+                                    <i class="fas fa-plus me-2"></i> Add Rule
+                                </button>
+                            </div>
+                        </div>
+
                         <div class="col-md-8">
+                            <!-- Active Rules -->
                             <div class="card-custom">
-                                <h6>Active Rules</h6>
-                                <table class="table"><thead><tr><th>Start</th><th>End</th><th>Limit</th><th>Action</th></tr></thead><tbody id="tb-settings"></tbody></table>
+                                <h6 class="mb-4">
+                                    <i class="fas fa-list me-2"></i> Active Seasonal Rules
+                                </h6>
+                                <div class="table-responsive">
+                                    <table class="table-custom">
+                                        <thead>
+                                            <tr>
+                                                <th>Start Date</th>
+                                                <th>End Date</th>
+                                                <th>Daily Limit</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tb-settings"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -115,114 +764,737 @@
         </div>
     </div>
 
-    <div class="modal fade" id="reqModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Confirm</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="m-start" class="form-control mb-2" readonly><input type="date" id="m-end" class="form-control mb-2"><select id="m-type" class="form-select"><option>Annual</option><option>Sick</option></select></div><div class="modal-footer"><button onclick="sendReq()" class="btn btn-primary w-100">Submit</button></div></div></div></div>
+    <!-- ============================================ -->
+    <!-- MODALS -->
+    <!-- ============================================ -->
 
+    <!-- Leave Request Modal -->
+    <div class="modal fade" id="reqModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-calendar-plus me-2"></i> Request Leave
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" id="m-start" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" id="m-end" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Leave Type</label>
+                        <select id="m-type" class="form-select">
+                            <option value="Annual">Annual Leave</option>
+                            <option value="Sick">Sick Leave</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes (Optional)</label>
+                        <textarea id="m-notes" class="form-control" rows="3" placeholder="Add any additional information..."></textarea>
+                    </div>
+                    <div id="req-summary" class="alert alert-info-custom">
+                        <i class="fas fa-info-circle"></i>
+                        <div>
+                            <strong>Duration:</strong> <span id="req-days">1</span> day(s)<br>
+                            <strong>Remaining Balance:</strong> <span id="req-balance">0</span> days
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button onclick="sendReq()" class="btn btn-primary-custom btn-custom">
+                        <i class="fas fa-paper-plane me-2"></i> Submit Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Action Modal -->
+    <div class="modal fade" id="adminActionModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="admin-action-title">Review Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="admin-action-info" class="mb-3"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Admin Notes (Optional)</label>
+                        <textarea id="admin-notes" class="form-control" rows="3" placeholder="Add notes for the employee..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button onclick="confirmAdminAction('Rejected')" class="btn btn-danger">
+                        <i class="fas fa-times me-2"></i> Reject
+                    </button>
+                    <button onclick="confirmAdminAction('Approved')" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i> Approve
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ============================================ -->
+    <!-- MAIN APPLICATION SCRIPT -->
+    <!-- ============================================ -->
     <script>
-        let DATA = {}; let calendarObj = null;
+        // ===== Global Variables =====
+        let DATA = {};
+        let calendarObj = null;
+        let currentAdminRequestId = null;
+
+        // ===== Utility Functions =====
+        function showLoading() {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
 
         async function apiCall(payload) {
-            const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
-            return await res.json();
+            try {
+                const res = await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                
+                return await res.json();
+            } catch (error) {
+                console.error('API Call Error:', error);
+                throw error;
+            }
         }
 
+        // ===== Authentication =====
         async function doLogin() {
-            const u = document.getElementById('login-user').value; const p = document.getElementById('login-pass').value;
-            const btn = document.getElementById('btn-login'); btn.innerText = "Loading..."; btn.disabled = true;
+            const u = document.getElementById('login-user').value.trim();
+            const p = document.getElementById('login-pass').value.trim();
+
+            if (!u || !p) {
+                Swal.fire('Error', 'Please enter username and password', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-login');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Logging in...';
+            btn.disabled = true;
+
             try {
                 const res = await apiCall({ action: 'login', username: u, password: p });
-                if(res.success) { DATA = res; initApp(); } else { Swal.fire('Error', res.message, 'error'); }
-            } catch(e) { Swal.fire('Connection Failed', 'Check URL or Permissions', 'error'); }
-            btn.innerText = "Login"; btn.disabled = false;
+                
+                if (res.success) {
+                    DATA = res;
+                    initApp();
+                } else {
+                    Swal.fire('Login Failed', res.message, 'error');
+                }
+            } catch (e) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Connection Failed',
+                    text: 'Cannot connect to server. Please check your API URL.',
+                    footer: '<a href="https://script.google.com/home" target="_blank">Verify your deployment</a>'
+                });
+            } finally {
+                btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i> Login';
+                btn.disabled = false;
+            }
         }
 
+        // ===== App Initialization =====
         function initApp() {
-            document.getElementById('view-login').classList.add('hidden'); document.getElementById('view-app').classList.remove('hidden');
-            document.getElementById('u-name').innerText = DATA.user.name || 'User';
-            
-            if(DATA.user.role === 'Admin') {
+            // Hide login, show app
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-app').classList.remove('hidden');
+
+            // Set user info
+            document.getElementById('u-name').textContent = DATA.user.name || 'User';
+            document.getElementById('u-role').textContent = DATA.user.role || 'Employee';
+
+            // Role-based UI
+            if (DATA.user.role === 'Admin') {
                 document.getElementById('menu-admin').classList.remove('hidden');
                 document.getElementById('admin-stats').classList.remove('hidden');
-                updateDash(); renderSettings();
-            } else { document.getElementById('menu-emp').classList.remove('hidden'); }
-            
-            renderMy(); initCalendar(); nav('home');
+                updateDashboard();
+                renderSettings();
+            } else {
+                document.getElementById('menu-emp').classList.remove('hidden');
+                document.getElementById('balance-display').classList.remove('hidden');
+                document.getElementById('u-balance').textContent = DATA.user.balance;
+                document.getElementById('emp-quick-stats').classList.remove('hidden');
+                updateEmployeeStats();
+            }
+
+            renderMyRequests();
+            initCalendar();
+            nav('home');
         }
 
-        function nav(id) {
-            document.querySelectorAll('.page-section').forEach(e => e.classList.add('hidden'));
-            document.getElementById('page-'+id).classList.remove('hidden');
-            if(id === 'new-req' && calendarObj) setTimeout(() => calendarObj.render(), 200);
+        // ===== Navigation =====
+        function nav(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page-section').forEach(page => {
+                page.classList.add('hidden');
+            });
+
+            // Show selected page
+            document.getElementById('page-' + pageId).classList.remove('hidden');
+
+            // Update active nav
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.closest('.nav-link').classList.add('active');
+
+            // Special handling for calendar
+            if (pageId === 'new-req' && calendarObj) {
+                setTimeout(() => calendarObj.render(), 200);
+            }
+
+            // Special handling for admin requests
+            if (pageId === 'admin-req') {
+                renderAdminRequests();
+            }
         }
 
-        function updateDash() {
+        // ===== Dashboard Updates =====
+        function updateDashboard() {
             const r = DATA.allRequests || [];
-            document.getElementById('stat-total').innerText = r.length;
-            document.getElementById('stat-pending').innerText = r.filter(x => x.status === 'Pending').length;
-            document.getElementById('stat-approved').innerText = r.filter(x => x.status === 'Approved').length;
-            document.getElementById('stat-rejected').innerText = r.filter(x => x.status === 'Rejected').length;
+            document.getElementById('stat-total').textContent = r.length;
+            document.getElementById('stat-pending').textContent = r.filter(x => x.status === 'Pending').length;
+            document.getElementById('stat-approved').textContent = r.filter(x => x.status === 'Approved').length;
+            document.getElementById('stat-rejected').textContent = r.filter(x => x.status === 'Rejected').length;
+        }
+
+        function updateEmployeeStats() {
+            const myReqs = DATA.myRequests || [];
+            document.getElementById('emp-approved').textContent = myReqs.filter(r => r.status === 'Approved').length;
+            document.getElementById('emp-pending').textContent = myReqs.filter(r => r.status === 'Pending').length;
             
+            const daysUsed = myReqs
+                .filter(r => r.status === 'Approved' && r.type === 'Annual')
+                .reduce((sum, r) => sum + (r.days || 0), 0);
+            document.getElementById('emp-days-used').textContent = daysUsed;
+        }
+
+        // ===== Admin Requests Management =====
+        function renderAdminRequests() {
             const tbody = document.getElementById('tb-admin-req');
-            tbody.innerHTML = r.map(x => `<tr><td>${x.name}</td><td>${x.start}</td><td><span class="badge-status bg-${x.status.toLowerCase()}">${x.status}</span></td>
-            <td>${x.status==='Pending' ? `<button onclick="admAct('${x.id}','Approved')" class="btn btn-sm btn-success">✔</button> <button onclick="admAct('${x.id}','Rejected')" class="btn btn-sm btn-danger">✘</button>`:''}</td></tr>`).join('');
+            const r = DATA.allRequests || [];
+
+            if (r.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><i class="fas fa-inbox fa-3x mb-3 d-block"></i>No requests found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = r.map(x => `
+                <tr>
+                    <td>
+                        <strong>${x.name}</strong><br>
+                        <small class="text-muted">${x.username}</small>
+                    </td>
+                    <td><span class="badge bg-secondary">${x.type}</span></td>
+                    <td>${x.start}</td>
+                    <td>${x.end}</td>
+                    <td><strong>${x.days || 1}</strong> day(s)</td>
+                    <td><span class="badge-status bg-${x.status.toLowerCase()}">${x.status}</span></td>
+                    <td>
+                        ${x.status === 'Pending' ? 
+                            `<button onclick="openAdminAction('${x.id}', '${x.name}', '${x.start}', '${x.end}', ${x.days})" 
+                                class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye me-1"></i> Review
+                            </button>` 
+                            : '<span class="text-muted">—</span>'}
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        function renderSettings() {
-            const def = DATA.settings.find(s => s.type === 'Default');
-            if(def) document.getElementById('default-limit').value = def.limit;
+        function openAdminAction(id, name, start, end, days) {
+            currentAdminRequestId = id;
             
-            const seasons = DATA.settings.filter(s => s.type === 'Season');
-            document.getElementById('tb-settings').innerHTML = seasons.map((s, i) => `
-                <tr><td>${s.start}</td><td>${s.end}</td><td>${s.limit}</td>
-                <td><button onclick="delRule(${i})" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+            document.getElementById('admin-action-info').innerHTML = `
+                <div class="alert alert-info-custom">
+                    <i class="fas fa-user-circle"></i>
+                    <div>
+                        <strong>Employee:</strong> ${name}<br>
+                        <strong>Period:</strong> ${start} to ${end}<br>
+                        <strong>Duration:</strong> ${days} day(s)
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('admin-notes').value = '';
+            new bootstrap.Modal(document.getElementById('adminActionModal')).show();
         }
 
-        async function updateDefault() {
-            await apiCall({ action: 'updateDefault', limit: document.getElementById('default-limit').value });
-            Swal.fire('Updated', '', 'success');
+        async function confirmAdminAction(action) {
+            if (!currentAdminRequestId) return;
+
+            const notes = document.getElementById('admin-notes').value;
+            
+            showLoading();
+            bootstrap.Modal.getInstance(document.getElementById('adminActionModal')).hide();
+
+            try {
+                const res = await apiCall({
+                    action: 'adminAction',
+                    id: currentAdminRequestId,
+                    act: action,
+                    notes: notes
+                });
+
+                if (res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: action === 'Approved' ? 'Request Approved!' : 'Request Rejected',
+                        text: res.message,
+                        timer: 2000
+                    });
+
+                    // Refresh data
+                    await refreshData();
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Failed to process request', 'error');
+            } finally {
+                hideLoading();
+            }
         }
 
-        async function saveSeason() {
-            await apiCall({ action: 'saveSeason', start: document.getElementById('s-start').value, end: document.getElementById('s-end').value, limit: document.getElementById('s-limit').value });
-            Swal.fire('Saved', 'Refresh to see changes', 'success');
+        // ===== My Requests =====
+        function renderMyRequests() {
+            const tbody = document.getElementById('tb-my-req');
+            const r = DATA.myRequests || [];
+
+            if (r.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted"><i class="fas fa-folder-open fa-3x mb-3 d-block"></i>No requests yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = r.map(req => `
+                <tr>
+                    <td>${req.timestamp}</td>
+                    <td><span class="badge bg-secondary">${req.type}</span></td>
+                    <td>${req.start}</td>
+                    <td>${req.end}</td>
+                    <td><strong>${req.days || 1}</strong></td>
+                    <td><span class="badge-status bg-${req.status.toLowerCase()}">${req.status}</span></td>
+                    <td>${req.notes || '—'}</td>
+                </tr>
+            `).join('');
         }
 
-        async function delRule(idx) {
-            if(confirm('Delete rule?')) { await apiCall({ action: 'deleteSetting', index: idx }); Swal.fire('Deleted', 'Refresh to see changes', 'success'); }
-        }
-
+        // ===== Calendar =====
         function initCalendar() {
             calendarObj = new FullCalendar.Calendar(document.getElementById('calendar'), {
-                initialView: 'dayGridMonth', height: 500,
+                initialView: 'dayGridMonth',
+                height: 600,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth'
+                },
                 dayCellClassNames: (arg) => {
-                    if (arg.date < new Date().setHours(0,0,0,0)) return [];
-                    const d = arg.date.toISOString().split('T')[0];
-                    const lim = getLim(d); const cnt = getCnt(d);
-                    return (lim === 0 || cnt >= lim) ? ['bg-danger','bg-opacity-10'] : [];
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    if (arg.date < today) {
+                        return ['fc-day-past'];
+                    }
+
+                    const dateStr = arg.date.toISOString().split('T')[0];
+                    const limit = getDailyLimit(dateStr);
+                    const count = getApprovedCount(dateStr);
+
+                    if (limit === 0 || count >= limit) {
+                        return ['day-blocked'];
+                    } else if (count >= limit - 1) {
+                        return ['day-limited'];
+                    }
+
+                    return [];
                 },
                 dateClick: (info) => {
-                    const d = info.dateStr; if(getLim(d)===0 || getCnt(d)>=getLim(d)) return Swal.fire('Full','','warning');
-                    document.getElementById('m-start').value = d; document.getElementById('m-end').value = d;
-                    new bootstrap.Modal(document.getElementById('reqModal')).show();
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const clickedDate = new Date(info.dateStr);
+
+                    if (clickedDate < today) {
+                        Swal.fire('Past Date', 'Cannot request leave for past dates', 'warning');
+                        return;
+                    }
+
+                    const limit = getDailyLimit(info.dateStr);
+                    const count = getApprovedCount(info.dateStr);
+
+                    if (limit === 0 || count >= limit) {
+                        Swal.fire('Fully Booked', 'This date has reached its limit', 'warning');
+                        return;
+                    }
+
+                    openRequestModal(info.dateStr);
                 }
             });
+
             calendarObj.render();
         }
 
-        function getLim(d) {
-            let dt = new Date(d);
-            let s = DATA.settings.find(x => x.type==='Season' && dt>=new Date(x.start) && dt<=new Date(x.end));
-            if(s) return s.limit;
-            let def = DATA.settings.find(x => x.type==='Default'); return def ? def.limit : 2;
+        function getDailyLimit(dateStr) {
+            const date = new Date(dateStr);
+            
+            // Check for seasonal rules
+            const seasonal = DATA.settings.filter(s => s.type === 'Season');
+            for (let rule of seasonal) {
+                const start = new Date(rule.start);
+                const end = new Date(rule.end);
+                if (date >= start && date <= end) {
+                    return rule.limit;
+                }
+            }
+
+            // Return default
+            const defaultSetting = DATA.settings.find(s => s.type === 'Default');
+            return defaultSetting ? defaultSetting.limit : 2;
         }
-        function getCnt(d) { let t=new Date(d); return DATA.approvedRequests.filter(r => t>=new Date(r.start) && t<=new Date(r.end)).length; }
-        
+
+        function getApprovedCount(dateStr) {
+            const date = new Date(dateStr);
+            return DATA.approvedRequests.filter(r => {
+                const start = new Date(r.start);
+                const end = new Date(r.end);
+                return date >= start && date <= end;
+            }).length;
+        }
+
+        // ===== Request Submission =====
+        function openRequestModal(dateStr) {
+            document.getElementById('m-start').value = dateStr;
+            document.getElementById('m-end').value = dateStr;
+            document.getElementById('m-notes').value = '';
+            updateRequestSummary();
+            
+            // Add end date change listener
+            document.getElementById('m-end').addEventListener('change', updateRequestSummary);
+            
+            new bootstrap.Modal(document.getElementById('reqModal')).show();
+        }
+
+        function updateRequestSummary() {
+            const start = document.getElementById('m-start').value;
+            const end = document.getElementById('m-end').value;
+            
+            if (start && end) {
+                const days = calculateDays(start, end);
+                document.getElementById('req-days').textContent = days;
+                document.getElementById('req-balance').textContent = DATA.user.balance;
+            }
+        }
+
+        function calculateDays(start, end) {
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            const diffTime = Math.abs(endDate - startDate);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        }
+
         async function sendReq() {
-            await apiCall({ action: 'submitRequest', form: { username: DATA.user.username, name: DATA.user.name, start: document.getElementById('m-start').value, end: document.getElementById('m-end').value, type: document.getElementById('m-type').value } });
-            bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide(); Swal.fire('Sent','','success');
+            const start = document.getElementById('m-start').value;
+            const end = document.getElementById('m-end').value;
+            const type = document.getElementById('m-type').value;
+            const notes = document.getElementById('m-notes').value;
+
+            if (new Date(end) < new Date(start)) {
+                Swal.fire('Invalid Dates', 'End date must be after or equal to start date', 'error');
+                return;
+            }
+
+            showLoading();
+            bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide();
+
+            try {
+                const res = await apiCall({
+                    action: 'submitRequest',
+                    form: {
+                        username: DATA.user.username,
+                        name: DATA.user.name,
+                        start: start,
+                        end: end,
+                        type: type,
+                        notes: notes
+                    }
+                });
+
+                if (res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Request Submitted!',
+                        text: res.message,
+                        timer: 2000
+                    });
+
+                    // Refresh data
+                    await refreshData();
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Failed to submit request', 'error');
+            } finally {
+                hideLoading();
+            }
         }
-        
-        async function admAct(id, act) { await apiCall({ action: 'adminAction', id: id, act: act }); Swal.fire('Done','','success'); }
-        function renderMy() { document.getElementById('tb-my-req').innerHTML = (DATA.myRequests||[]).map(r => `<tr><td>${r.start}</td><td>${r.type}</td><td>${r.status}</td></tr>`).join(''); }
+
+        // ===== Settings Management =====
+        function renderSettings() {
+            const defaultSetting = DATA.settings.find(s => s.type === 'Default');
+            if (defaultSetting) {
+                document.getElementById('default-limit').value = defaultSetting.limit;
+            }
+
+            const seasons = DATA.settings.filter(s => s.type === 'Season');
+            const tbody = document.getElementById('tb-settings');
+
+            if (seasons.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">No seasonal rules defined</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = seasons.map((s, i) => `
+                <tr>
+                    <td>${s.start}</td>
+                    <td>${s.end}</td>
+                    <td><strong>${s.limit}</strong> ${s.limit === 0 ? '(Blocked)' : ''}</td>
+                    <td>
+                        <button onclick="deleteRule(${i})" class="btn btn-sm btn-danger btn-icon">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function updateDefault() {
+            const limit = document.getElementById('default-limit').value;
+
+            if (!limit || limit < 0) {
+                Swal.fire('Invalid Input', 'Please enter a valid limit', 'error');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const res = await apiCall({ action: 'updateDefault', limit: limit });
+                
+                if (res.success) {
+                    Swal.fire('Updated!', res.message, 'success');
+                    await refreshData();
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Failed to update', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function saveSeason() {
+            const start = document.getElementById('s-start').value;
+            const end = document.getElementById('s-end').value;
+            const limit = document.getElementById('s-limit').value;
+
+            if (!start || !end || limit === '') {
+                Swal.fire('Missing Fields', 'Please fill all fields', 'error');
+                return;
+            }
+
+            if (new Date(end) < new Date(start)) {
+                Swal.fire('Invalid Dates', 'End date must be after start date', 'error');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const res = await apiCall({
+                    action: 'saveSeason',
+                    start: start,
+                    end: end,
+                    limit: limit
+                });
+
+                if (res.success) {
+                    Swal.fire('Saved!', res.message, 'success');
+                    
+                    // Clear form
+                    document.getElementById('s-start').value = '';
+                    document.getElementById('s-end').value = '';
+                    document.getElementById('s-limit').value = '';
+
+                    await refreshData();
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Failed to save', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function deleteRule(index) {
+            const result = await Swal.fire({
+                title: 'Delete Rule?',
+                text: 'This action cannot be undone',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, delete it'
+            });
+
+            if (!result.isConfirmed) return;
+
+            showLoading();
+
+            try {
+                const res = await apiCall({ action: 'deleteSetting', index: index });
+                
+                if (res.success) {
+                    Swal.fire('Deleted!', res.message, 'success');
+                    await refreshData();
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Failed to delete', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ===== Export Data =====
+        async function exportData() {
+            showLoading();
+
+            try {
+                const res = await apiCall({
+                    action: 'exportRequests',
+                    username: DATA.user.username,
+                    role: DATA.user.role
+                });
+
+                if (res.success && res.data) {
+                    // Convert to CSV
+                    const csv = convertToCSV(res.data);
+                    downloadCSV(csv, 'leave_requests_export.csv');
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Export Complete',
+                        text: `Exported ${res.count} record(s)`,
+                        timer: 2000
+                    });
+                } else {
+                    Swal.fire('Error', 'Failed to export data', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Export failed', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function convertToCSV(data) {
+            if (!data || data.length === 0) return '';
+
+            const headers = Object.keys(data[0]);
+            const csvRows = [];
+
+            // Add header row
+            csvRows.push(headers.join(','));
+
+            // Add data rows
+            for (const row of data) {
+                const values = headers.map(header => {
+                    const val = row[header];
+                    return typeof val === 'string' && val.includes(',') ? `"${val}"` : val;
+                });
+                csvRows.push(values.join(','));
+            }
+
+            return csvRows.join('\n');
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // ===== Refresh Data =====
+        async function refreshData() {
+            try {
+                const res = await apiCall({
+                    action: 'login',
+                    username: DATA.user.username,
+                    password: 'refresh' // Note: In production, use token-based auth
+                });
+
+                if (res.success) {
+                    DATA = res;
+                    
+                    // Update UI based on role
+                    if (DATA.user.role === 'Admin') {
+                        updateDashboard();
+                        renderSettings();
+                        if (document.getElementById('page-admin-req').classList.contains('hidden') === false) {
+                            renderAdminRequests();
+                        }
+                    } else {
+                        document.getElementById('u-balance').textContent = DATA.user.balance;
+                        updateEmployeeStats();
+                    }
+
+                    renderMyRequests();
+                    
+                    if (calendarObj) {
+                        calendarObj.refetchEvents();
+                        calendarObj.render();
+                    }
+                }
+            } catch (error) {
+                console.error('Refresh failed:', error);
+            }
+        }
     </script>
 </body>
 </html>
