@@ -12,7 +12,7 @@
 
     <script>
         // 🔴🔴🔴 IMPORTANT: Replace with your deployed Google Apps Script URL 🔴🔴🔴
-        const API_URL = "https://script.google.com/macros/s/AKfycbyrJrRDmJ7Ezds7uiiYgN7G0Vk312nm_NyXpyI2YvVu5A4rE-L7VnV6AHDBdDN1VtpKjA/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzTpNepjxcd0rGFQUTcvR2cNuoMxjW6WMzr7dvBDaCvYO2Qtt_3oC6OcoBFp5txdaq2GQ/exec";
     </script>
 
     <style>
@@ -442,14 +442,10 @@
 </head>
 <body>
 
-    <!-- Loading Overlay -->
     <div id="loading-overlay" class="hidden">
         <div class="spinner-large"></div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- LOGIN VIEW -->
-    <!-- ============================================ -->
     <div id="view-login">
         <div class="login-card">
             <div class="login-icon">
@@ -472,13 +468,9 @@
         </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- MAIN APPLICATION VIEW -->
-    <!-- ============================================ -->
     <div id="view-app" class="container-fluid hidden">
         <div class="row">
             
-            <!-- SIDEBAR -->
             <div class="col-md-2 sidebar">
                 <div class="sidebar-header">
                     <h5><i class="fas fa-cube me-2"></i> HR Portal</h5>
@@ -505,7 +497,6 @@
                         <span>Dashboard</span>
                     </a>
                     
-                    <!-- Employee Menu -->
                     <div id="menu-emp" class="hidden">
                         <a class="nav-link" onclick="nav('new-req')">
                             <i class="fas fa-plus-circle"></i>
@@ -517,7 +508,6 @@
                         </a>
                     </div>
                     
-                    <!-- Admin Menu -->
                     <div id="menu-admin" class="hidden">
                         <a class="nav-link" onclick="nav('admin-req')">
                             <i class="fas fa-tasks"></i>
@@ -541,17 +531,14 @@
                 </div>
             </div>
 
-            <!-- MAIN CONTENT AREA -->
             <div class="col-md-10 main-content">
                 
-                <!-- ===== HOME / DASHBOARD ===== -->
                 <div id="page-home" class="page-section">
                     <div class="page-header">
                         <h3>Dashboard</h3>
                         <p class="subtitle">Overview of leave management system</p>
                     </div>
 
-                    <!-- Admin Statistics -->
                     <div id="admin-stats" class="row g-4 mb-4 hidden">
                         <div class="col-md-3">
                             <div class="stat-card" style="border-color: var(--primary);">
@@ -579,7 +566,6 @@
                         </div>
                     </div>
 
-                    <!-- Welcome Card -->
                     <div class="card-custom">
                         <div class="alert-custom alert-info-custom">
                             <i class="fas fa-info-circle"></i>
@@ -590,7 +576,6 @@
                         </div>
                     </div>
 
-                    <!-- Employee Quick Stats -->
                     <div id="emp-quick-stats" class="hidden">
                         <div class="row g-4">
                             <div class="col-md-4">
@@ -618,7 +603,6 @@
                     </div>
                 </div>
 
-                <!-- ===== NEW REQUEST PAGE ===== -->
                 <div id="page-new-req" class="page-section hidden">
                     <div class="page-header">
                         <h3>Book a Leave</h3>
@@ -637,7 +621,6 @@
                     </div>
                 </div>
 
-                <!-- ===== MY REQUESTS PAGE ===== -->
                 <div id="page-my-req" class="page-section hidden">
                     <div class="page-header">
                         <h3>My Leave History</h3>
@@ -664,7 +647,6 @@
                     </div>
                 </div>
 
-                <!-- ===== ADMIN REQUESTS PAGE ===== -->
                 <div id="page-admin-req" class="page-section hidden">
                     <div class="page-header">
                         <h3>Manage Leave Requests</h3>
@@ -691,7 +673,6 @@
                     </div>
                 </div>
 
-                <!-- ===== SETTINGS PAGE ===== -->
                 <div id="page-settings" class="page-section hidden">
                     <div class="page-header">
                         <h3>System Settings</h3>
@@ -700,7 +681,6 @@
 
                     <div class="row">
                         <div class="col-md-4">
-                            <!-- Default Limit -->
                             <div class="card-custom border border-primary">
                                 <h6 class="text-primary mb-3">
                                     <i class="fas fa-sliders-h me-2"></i> Default Daily Limit
@@ -714,7 +694,6 @@
                                 </div>
                             </div>
 
-                            <!-- Add Season -->
                             <div class="card-custom mt-4">
                                 <h6 class="mb-3">
                                     <i class="fas fa-calendar-plus me-2"></i> Add Seasonal Rule
@@ -737,7 +716,6 @@
                         </div>
 
                         <div class="col-md-8">
-                            <!-- Active Rules -->
                             <div class="card-custom">
                                 <h6 class="mb-4">
                                     <i class="fas fa-list me-2"></i> Active Seasonal Rules
@@ -764,11 +742,6 @@
         </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- MODALS -->
-    <!-- ============================================ -->
-
-    <!-- Leave Request Modal -->
     <div class="modal fade" id="reqModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -816,7 +789,6 @@
         </div>
     </div>
 
-    <!-- Admin Action Modal -->
     <div class="modal fade" id="adminActionModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -844,12 +816,8 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- ============================================ -->
-    <!-- MAIN APPLICATION SCRIPT -->
-    <!-- ============================================ -->
     <script>
         // ===== Global Variables =====
         let DATA = {};
