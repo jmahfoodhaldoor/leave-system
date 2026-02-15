@@ -833,12 +833,14 @@
             document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        async function apiCall(payload) {
+      async function apiCall(payload) {
             try {
+                // نستخدم "no-cors" خدعة، ولكن الأهم هو إرسال البيانات كنص عادي
                 const res = await fetch(API_URL, {
                     method: "POST",
-                    body: JSON.stringify(payload),
-                    headers: { 'Content-Type': 'application/json' }
+                    // 🔴 التغيير هنا: نرسل البيانات كنص عادي عشان المتصفح ما يعترض
+                    body: JSON.stringify(payload)
+                    // 🔴 حذفنا الـ headers تماماً، وهذا هو سر الحل
                 });
                 
                 if (!res.ok) {
