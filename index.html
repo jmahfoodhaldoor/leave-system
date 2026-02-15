@@ -30,18 +30,18 @@
         /* Components */
         .nav-link { color: #94a3b8; padding: 12px 15px; margin: 5px 0; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
         .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; transform: translateX(5px); }
-        
         .card-custom { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px; border: 1px solid #e2e8f0; }
         .stat-card { background: white; padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        
         .badge-status { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
         
-        /* Calendar Specifics */
+        /* Calendar Fixes */
         .fc-daygrid-day { cursor: pointer; transition: 0.2s; }
-        .fc-daygrid-day:hover { background-color: #f8fafc; }
-        .day-blocked { background-color: #fee2e2 !important; cursor: not-allowed !important; pointer-events: none; }
+        .fc-daygrid-day:hover { background-color: #f1f5f9; }
+        
+        /* 🔴 تم إزالة pointer-events: none للسماح بالضغط */
+        .day-blocked { background-color: #fee2e2 !important; color: #b91c1c !important; }
         .day-limited { background-color: #fef3c7 !important; }
-        .day-past { background-color: #f1f5f9 !important; opacity: 0.5; pointer-events: none; }
+        .day-past { background-color: #f8fafc !important; opacity: 0.6; }
 
         /* Login */
         #view-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
@@ -83,15 +83,12 @@
                 <small class="text-white-50" id="u-role">Role</small>
                 <div id="balance-badge" class="mt-2 hidden"><span class="badge bg-success"><span id="u-balance">0</span> Days Balance</span></div>
             </div>
-            
             <nav>
                 <div class="nav-link active" onclick="nav('home')"><i class="fas fa-home"></i> Dashboard</div>
-                
                 <div id="menu-emp" class="hidden">
                     <div class="nav-link" onclick="nav('new-req')"><i class="fas fa-plus-circle"></i> New Request</div>
                     <div class="nav-link" onclick="nav('my-req')"><i class="fas fa-history"></i> My History</div>
                 </div>
-
                 <div id="menu-admin" class="hidden">
                     <div class="nav-link" onclick="nav('admin-req')"><i class="fas fa-tasks"></i> Requests <span id="badge-pending" class="badge bg-danger ms-auto hidden">0</span></div>
                     <div class="nav-link" onclick="nav('employees')"><i class="fas fa-users"></i> Employees</div>
@@ -104,7 +101,6 @@
         </div>
 
         <div class="main-content">
-            
             <div id="page-home" class="page-section">
                 <h3 class="fw-bold mb-4">Dashboard</h3>
                 <div id="admin-stats" class="row g-4 mb-4 hidden">
@@ -124,7 +120,7 @@
                 <div class="row">
                     <div class="col-md-8">
                         <div class="card-custom">
-                            <div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> Red dates = Full. Yellow = Limited.</div>
+                            <div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> Red = Blocked. Yellow = Limited. Click to book.</div>
                             <div id="calendar"></div>
                         </div>
                     </div>
@@ -195,7 +191,6 @@
     </div>
 
     <div class="modal fade" id="empModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Add Employee</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="e-name" class="form-control mb-2" placeholder="Full Name"><input type="text" id="e-user" class="form-control mb-2" placeholder="Username (ID)"><input type="password" id="e-pass" class="form-control mb-2" placeholder="Password"><input type="email" id="e-mail" class="form-control mb-2" placeholder="Email"><select id="e-role" class="form-select mb-2"><option value="Employee">Employee</option><option value="Admin">Admin</option></select><input type="number" id="e-bal" class="form-control mb-2" placeholder="Initial Balance"></div><div class="modal-footer border-0"><button onclick="addEmployee()" class="btn btn-primary w-100">Save</button></div></div></div></div>
-    
     <div class="modal fade" id="balModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content border-0 shadow"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Update Balance</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="eb-user"><label class="small fw-bold">New Balance</label><input type="number" id="eb-val" class="form-control" step="0.5"></div><div class="modal-footer border-0"><button onclick="saveBalance()" class="btn btn-success w-100">Update</button></div></div></div></div>
 
     <script>
@@ -218,7 +213,7 @@
             document.getElementById('loading-overlay').classList.remove('hidden');
             try {
                 const res = await apiCall({ action: 'login', username: u, password: p });
-                if (res.success) { DATA = res; DATA.settings = DATA.settings||[]; DATA.approvedRequests = DATA.approvedRequests||[]; initApp(); } 
+                if (res.success) { DATA = res; DATA.settings=DATA.settings||[]; DATA.approvedRequests=DATA.approvedRequests||[]; initApp(); } 
                 else { Swal.fire('Failed', res.message, 'error'); }
             } catch (e) { Swal.fire('Error', 'Connection Failed', 'error'); }
             document.getElementById('loading-overlay').classList.add('hidden');
@@ -272,19 +267,12 @@
                 out.map(o => `<div class="d-flex align-items-center bg-light rounded p-2 border"><div class="bg-primary text-white rounded-circle d-flex center me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div><div style="line-height:1.1"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type}</small></div></div>`).join('');
         }
 
-        // --- CALENDAR FIXED ---
         function initCalendar() {
             const el = document.getElementById('calendar');
             if(!el) return;
             calendarObj = new FullCalendar.Calendar(el, {
                 initialView: 'dayGridMonth', height: 500,
                 headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
-                dateClick: (info) => {
-                    const today = new Date().toISOString().split('T')[0];
-                    if (info.dateStr < today) return Swal.fire('','Past Date','warning');
-                    if (getDailyLimit(info.dateStr) === 0 || getApprovedCount(info.dateStr) >= getDailyLimit(info.dateStr)) return Swal.fire('','Full','error');
-                    openReqModal(info.dateStr);
-                },
                 dayCellClassNames: (arg) => {
                     const d = arg.date.toISOString().split('T')[0];
                     const today = new Date().toISOString().split('T')[0];
@@ -294,6 +282,12 @@
                     if (lim === 0 || cnt >= lim) return ['day-blocked'];
                     if (cnt >= lim - 1) return ['day-limited'];
                     return [];
+                },
+                dateClick: (info) => {
+                    const today = new Date().toISOString().split('T')[0];
+                    if (info.dateStr < today) return Swal.fire('','Past Date','warning');
+                    if (getDailyLimit(info.dateStr) === 0 || getApprovedCount(info.dateStr) >= getDailyLimit(info.dateStr)) return Swal.fire('','Full','error');
+                    openReqModal(info.dateStr);
                 }
             });
             calendarObj.render();
@@ -305,17 +299,17 @@
             const def = (DATA.settings||[]).find(s => s.type === 'Default');
             return def ? def.limit : 2;
         }
-        function getApprovedCount(d) {
-            return (DATA.approvedRequests||[]).filter(r => d >= r.start && d <= r.end).length;
-        }
+        function getApprovedCount(d) { return (DATA.approvedRequests||[]).filter(r => d >= r.start && d <= r.end).length; }
 
         function openReqModal(date) {
-            document.getElementById('m-start').value = date;
-            document.getElementById('m-end').value = date;
-            document.getElementById('m-duration').value = 'Full';
-            document.getElementById('req-bal').innerText = DATA.user.balance;
-            calcDays();
-            new bootstrap.Modal(document.getElementById('reqModal')).show();
+            try {
+                document.getElementById('m-start').value = date;
+                document.getElementById('m-end').value = date;
+                document.getElementById('m-duration').value = 'Full';
+                document.getElementById('req-bal').innerText = DATA.user ? DATA.user.balance : 0;
+                calcDays();
+                new bootstrap.Modal(document.getElementById('reqModal')).show();
+            } catch(e) { Swal.fire('Error', 'Could not open form: '+e.message, 'error'); }
         }
 
         function calcDays() {
