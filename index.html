@@ -1,2133 +1,576 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة الإجازات - Depot Dispatcher</title>
-    
-    <!-- Fonts & Libraries -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Depot Dispatcher Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 🔴🔴🔴 ضع رابط السكربت هنا 🔴🔴🔴
+        // 🔴🔴🔴 هام: ضع رابط Google Apps Script الجديد هنا 🔴🔴🔴
         const API_URL = "https://script.google.com/macros/s/AKfycbzqnlL3-wlQFop9WMwEgx1JT7DqD_Ss_56tI_86NF6J54d5I7X0qEFRPdzQDdkOScEHVg/exec";
-        
-        // يمكنك تفعيل/تعطيل PWA
-        const ENABLE_PWA = true;
     </script>
 
     <style>
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --bg: #f8fafc;
-            --sidebar: #1e293b;
-            --card-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background-color: var(--bg);
-            font-family: 'Cairo', 'Segoe UI', sans-serif;
-            color: #334155;
-            overflow-x: hidden;
-        }
-
+        :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f1f5f9; --sidebar-width: 260px; }
+        body { background-color: var(--bg); font-family: 'Poppins', sans-serif; color: #334155; overflow-x: hidden; }
         .hidden { display: none !important; }
+        
+        /* Loader */
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        
+        /* Layout */
+        .sidebar { width: var(--sidebar-width); height: 100vh; position: fixed; background: var(--primary); color: white; padding: 20px; transition: 0.3s; z-index: 1000; }
+        .main-content { margin-left: var(--sidebar-width); padding: 30px; min-height: 100vh; }
+        
+        /* Components */
+        .nav-link { color: #94a3b8; padding: 12px 15px; margin: 5px 0; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
+        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; transform: translateX(5px); }
+        .nav-link i { width: 20px; text-align: center; }
+        
+        .card-custom { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px; border: 1px solid #e2e8f0; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        .badge-status { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .bg-pending { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
+        .bg-approved { background: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; }
+        .bg-rejected { background: #fef2f2; color: #b91c1c; border: 1px solid #fee2e2; }
 
-        /* ===== Loading ===== */
-        #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
+        /* Login */
+        #view-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .login-box { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
 
-        .spinner-large {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        .loading-text {
-            color: white;
-            margin-top: 15px;
-            font-size: 1.1rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* ===== Login ===== */
-        #view-login {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-card {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            width: 100%;
-            max-width: 450px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        .login-icon {
-            width: 90px;
-            height: 90px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-        }
-
-        .login-icon i {
-            font-size: 2.5rem;
-            color: white;
-        }
-
-        /* ===== Sidebar ===== */
-        .sidebar {
-            min-height: 100vh;
-            background: var(--sidebar);
-            color: white;
-            padding: 25px 20px;
-            position: sticky;
-            top: 0;
-            overflow-y: auto;
-        }
-
-        .sidebar-header {
-            padding-bottom: 30px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .user-info {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-
-        .balance-badge {
-            background: var(--success);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: inline-block;
-            margin-top: 8px;
-        }
-
-        .nav-link {
-            color: #94a3b8;
-            margin: 5px 0;
-            padding: 12px 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            transform: translateX(-5px);
-        }
-
-        .nav-link.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .nav-link i {
-            width: 20px;
-            text-align: center;
-        }
-
-        /* ===== Main Content ===== */
-        .main-content {
-            padding: 30px;
-            height: 100vh;
-            overflow-y: auto;
-        }
-
-        .page-header {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        .page-header h3 {
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 5px;
-        }
-
-        .page-header .subtitle {
-            color: #64748b;
-            font-size: 0.95rem;
-        }
-
-        /* ===== Cards ===== */
-        .stat-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: var(--card-shadow);
-            border-right: 5px solid;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-        }
-
-        .stat-card h2 {
-            font-weight: 700;
-            margin-bottom: 5px;
-            font-size: 2.5rem;
-        }
-
-        .stat-card small {
-            color: #64748b;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-        }
-
-        .card-custom {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 25px;
-        }
-
-        /* ===== Status Badges ===== */
-        .badge-status {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .bg-pending {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        .bg-approved {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .bg-rejected {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* ===== Tables ===== */
-        .table-custom {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        .table-custom thead {
-            background: var(--bg);
-        }
-
-        .table-custom thead th {
-            padding: 15px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            color: #64748b;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        .table-custom tbody td {
-            padding: 15px;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-        }
-
-        .table-custom tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        /* ===== Calendar ===== */
-        #calendar {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-        }
-
-        .fc .fc-button-primary {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-
-        .fc .fc-button-primary:hover {
-            background: var(--primary-dark);
-            border-color: var(--primary-dark);
-        }
-
-        .fc-daygrid-day {
-            cursor: pointer;
-        }
-
-        .fc-daygrid-day.fc-day-past {
-            background: #f8fafc;
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .fc-daygrid-day.day-blocked {
-            background: #fee2e2 !important;
-            cursor: not-allowed;
-        }
-
-        .fc-daygrid-day.day-limited {
-            background: #fef3c7 !important;
-        }
-
-        /* ===== Forms ===== */
-        .form-control,
-        .form-select {
-            border-radius: 10px;
-            border: 2px solid #e2e8f0;
-            padding: 12px 15px;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        /* ===== Modal ===== */
-        .modal-content {
-            border-radius: 20px;
-            border: none;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-header {
-            border-bottom: 2px solid #f1f5f9;
-            padding: 20px 30px;
-        }
-
-        .modal-body {
-            padding: 30px;
-        }
-
-        .modal-footer {
-            border-top: 2px solid #f1f5f9;
-            padding: 20px 30px;
-        }
-
-        /* ===== Alert ===== */
-        .alert-custom {
-            border-radius: 15px;
-            padding: 20px;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .alert-custom i {
-            font-size: 1.5rem;
-        }
-
-        .alert-info-custom {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .alert-success-custom {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .alert-warning-custom {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        /* ===== File Upload ===== */
-        .file-upload-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .file-upload-wrapper input[type=file] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        .file-upload-btn {
-            display: inline-block;
-            padding: 12px 20px;
-            background: var(--primary);
-            color: white;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-            text-align: center;
-            transition: background 0.3s;
-        }
-
-        .file-upload-btn:hover {
-            background: var(--primary-dark);
-        }
-
-        .file-info {
-            margin-top: 10px;
-            padding: 10px;
-            background: #f1f5f9;
-            border-radius: 8px;
-            font-size: 0.9rem;
-        }
-
-        /* ===== Responsive ===== */
         @media (max-width: 768px) {
-            .sidebar {
-                min-height: auto;
-                position: relative;
-            }
-
-            .main-content {
-                padding: 20px;
-            }
-
-            .stat-card h2 {
-                font-size: 2rem;
-            }
-        }
-
-        /* ===== Custom Scrollbar ===== */
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-
-        /* ===== PWA Install Button ===== */
-        #install-pwa-btn {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 50px;
-            box-shadow: 0 5px 15px rgba(37, 99, 235, 0.3);
-            cursor: pointer;
-            z-index: 1000;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            .sidebar { left: -100%; }
+            .sidebar.active { left: 0; }
+            .main-content { margin-left: 0; }
         }
     </style>
-    
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2563eb">
-    <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
-    <!-- Loading Overlay -->
     <div id="loading-overlay" class="hidden">
-        <div class="spinner-large"></div>
-        <div class="loading-text">جاري التحميل...</div>
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
     </div>
 
-    <!-- PWA Install Button -->
-    <button id="install-pwa-btn" class="hidden">
-        <i class="fas fa-download me-2"></i>
-        تثبيت التطبيق
-    </button>
-
-    <!-- ============================================ -->
-    <!-- LOGIN VIEW -->
-    <!-- ============================================ -->
     <div id="view-login">
-        <div class="login-card">
-            <div class="login-icon">
-                <i class="fas fa-building"></i>
+        <div class="login-box">
+            <div class="text-center mb-4">
+                <i class="fas fa-cubes fa-3x text-primary mb-3"></i>
+                <h4 class="fw-bold">Depot Dispatcher</h4>
+                <p class="text-muted small">Employee Portal</p>
             </div>
-            <h4 class="text-center fw-bold mb-2">نظام إدارة الإجازات</h4>
-            <p class="text-center text-muted mb-4">Depot Dispatcher</p>
-            
-            <div class="mb-3">
-                <label class="form-label">اسم المستخدم</label>
-                <input type="text" id="login-user" class="form-control" placeholder="أدخل اسم المستخدم">
-            </div>
-            <div class="mb-4">
-                <label class="form-label">كلمة المرور</label>
-                <input type="password" id="login-pass" class="form-control" placeholder="أدخل كلمة المرور">
-            </div>
-            <button onclick="doLogin()" id="btn-login" class="btn btn-primary w-100 py-2 fw-bold">
-                <i class="fas fa-sign-in-alt me-2"></i>
-                تسجيل الدخول
-            </button>
+            <form onsubmit="event.preventDefault(); doLogin();">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Username</label>
+                    <input type="text" id="login-user" class="form-control" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">Password</label>
+                    <input type="password" id="login-pass" class="form-control" required>
+                </div>
+                <button type="submit" id="btn-login" class="btn btn-primary w-100 py-2">Sign In</button>
+            </form>
         </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- MAIN APPLICATION VIEW -->
-    <!-- ============================================ -->
-    <div id="view-app" class="container-fluid hidden">
-        <div class="row">
-            
-            <!-- SIDEBAR -->
-            <div class="col-md-2 sidebar">
-                <div class="sidebar-header">
-                    <h5>
-                        <i class="fas fa-cube me-2"></i>
-                        نظام الإجازات
-                    </h5>
-                    <div class="user-info">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="fas fa-user-circle fa-2x me-2"></i>
-                            <div>
-                                <div class="fw-semibold" id="u-name">المستخدم</div>
-                                <small class="text-muted" id="u-role">الصلاحية</small>
-                            </div>
-                        </div>
-                        <div id="balance-display" class="hidden">
-                            <span class="balance-badge">
-                                <i class="fas fa-calendar-check me-1"></i>
-                                <span id="u-balance">0</span> يوم متبقي
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <nav class="nav flex-column mt-4">
-                    <a class="nav-link active" onclick="nav('home')">
-                        <i class="fas fa-home"></i>
-                        <span>الرئيسية</span>
-                    </a>
-                    
-                    <!-- Employee Menu -->
-                    <div id="menu-emp" class="hidden">
-                        <a class="nav-link" onclick="nav('new-req')">
-                            <i class="fas fa-plus-circle"></i>
-                            <span>طلب إجازة جديد</span>
-                        </a>
-                        <a class="nav-link" onclick="nav('my-req')">
-                            <i class="fas fa-history"></i>
-                            <span>طلباتي</span>
-                        </a>
-                        <a class="nav-link" onclick="nav('team-calendar')">
-                            <i class="fas fa-users"></i>
-                            <span>تقويم الفريق</span>
-                        </a>
-                        <a class="nav-link" onclick="openChangePassword()">
-                            <i class="fas fa-key"></i>
-                            <span>تغيير كلمة المرور</span>
-                        </a>
-                    </div>
-                    
-                    <!-- Admin Menu -->
-                    <div id="menu-admin" class="hidden">
-                        <a class="nav-link" onclick="nav('admin-req')">
-                            <i class="fas fa-tasks"></i>
-                            <span>إدارة الطلبات</span>
-                        </a>
-                        <a class="nav-link" onclick="nav('employees')">
-                            <i class="fas fa-users-cog"></i>
-                            <span>إدارة الموظفين</span>
-                        </a>
-                        <a class="nav-link" onclick="nav('settings')">
-                            <i class="fas fa-cog"></i>
-                            <span>الإعدادات</span>
-                        </a>
-                        <a class="nav-link" onclick="exportData()">
-                            <i class="fas fa-download"></i>
-                            <span>تصدير البيانات</span>
-                        </a>
-                    </div>
-                </nav>
-
-                <div class="mt-auto pt-5">
-                    <button onclick="location.reload()" class="btn btn-outline-light btn-sm w-100">
-                        <i class="fas fa-sign-out-alt me-2"></i>
-                        تسجيل الخروج
-                    </button>
+    <div id="view-app" class="hidden">
+        <div class="sidebar">
+            <h5 class="mb-4 fw-bold"><i class="fas fa-cubes me-2"></i> Depot Portal</h5>
+            <div class="mb-4 p-3 rounded bg-white bg-opacity-10">
+                <div class="fw-bold" id="u-name">User</div>
+                <small class="text-white-50" id="u-role">Role</small>
+                <div id="balance-badge" class="mt-2 hidden">
+                    <span class="badge bg-success"><span id="u-balance">0</span> Days Balance</span>
                 </div>
             </div>
-
-            <!-- MAIN CONTENT AREA -->
-            <div class="col-md-10 main-content">
+            
+            <nav>
+                <div class="nav-link active" onclick="nav('home')"><i class="fas fa-home"></i> Dashboard</div>
                 
-                <!-- ===== HOME / DASHBOARD ===== -->
-                <div id="page-home" class="page-section">
-                    <div class="page-header">
-                        <h3>لوحة التحكم</h3>
-                        <p class="subtitle">نظرة عامة على نظام إدارة الإجازات</p>
-                    </div>
-
-                    <!-- Admin Statistics -->
-                    <div id="admin-stats" class="row g-4 mb-4 hidden">
-                        <div class="col-md-3">
-                            <div class="stat-card" style="border-color: var(--primary);">
-                                <h2 class="text-primary" id="stat-total">0</h2>
-                                <small>إجمالي الطلبات</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-card" style="border-color: var(--warning);">
-                                <h2 class="text-warning" id="stat-pending">0</h2>
-                                <small>قيد المراجعة</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-card" style="border-color: var(--success);">
-                                <h2 class="text-success" id="stat-approved">0</h2>
-                                <small>موافق عليها</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stat-card" style="border-color: var(--danger);">
-                                <h2 class="text-danger" id="stat-rejected">0</h2>
-                                <small>مرفوضة</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Welcome Card -->
-                    <div class="card-custom">
-                        <div class="alert-custom alert-info-custom">
-                            <i class="fas fa-info-circle"></i>
-                            <div>
-                                <h5 class="mb-1">👋 مرحباً بعودتك!</h5>
-                                <p class="mb-0">تحقق من التوفر في التقويم قبل تقديم طلب إجازة جديد.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Employee Quick Stats -->
-                    <div id="emp-quick-stats" class="hidden">
-                        <div class="row g-4">
-                            <div class="col-md-4">
-                                <div class="card-custom text-center">
-                                    <i class="fas fa-calendar-check fa-3x text-success mb-3"></i>
-                                    <h4 id="emp-approved">0</h4>
-                                    <small class="text-muted">إجازات موافق عليها</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card-custom text-center">
-                                    <i class="fas fa-clock fa-3x text-warning mb-3"></i>
-                                    <h4 id="emp-pending">0</h4>
-                                    <small class="text-muted">طلبات قيد المراجعة</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card-custom text-center">
-                                    <i class="fas fa-umbrella-beach fa-3x text-primary mb-3"></i>
-                                    <h4 id="emp-days-used">0</h4>
-                                    <small class="text-muted">أيام مستخدمة</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Team Status (للموظفين) -->
-                    <div id="team-status" class="card-custom mt-4 hidden">
-                        <h6 class="mb-3">
-                            <i class="fas fa-users me-2"></i>
-                            حالة الفريق اليوم
-                        </h6>
-                        <div id="team-status-container"></div>
-                    </div>
+                <div id="menu-emp" class="hidden">
+                    <div class="nav-link" onclick="nav('new-req')"><i class="fas fa-plus-circle"></i> New Request</div>
+                    <div class="nav-link" onclick="nav('my-req')"><i class="fas fa-history"></i> My History</div>
                 </div>
 
-                <!-- ===== NEW REQUEST PAGE ===== -->
-                <div id="page-new-req" class="page-section hidden">
-                    <div class="page-header">
-                        <h3>طلب إجازة جديد</h3>
-                        <p class="subtitle">اختر التواريخ من التقويم أدناه</p>
-                    </div>
-
-                    <div class="card-custom">
-                        <div class="alert-custom alert-success-custom mb-4">
-                            <i class="fas fa-lightbulb"></i>
-                            <div>
-                                <strong>ملاحظة:</strong> 
-                                الأيام الحمراء محجوزة بالكامل. 
-                                الأيام الصفراء لديها أماكن محدودة.
-                                انقر على التاريخ المتاح لتقديم طلبك.
-                            </div>
-                        </div>
-                        <div id="calendar"></div>
-                    </div>
+                <div id="menu-admin" class="hidden">
+                    <div class="nav-link" onclick="nav('admin-req')"><i class="fas fa-tasks"></i> Requests <span id="badge-pending" class="badge bg-danger ms-auto hidden">0</span></div>
+                    <div class="nav-link" onclick="nav('employees')"><i class="fas fa-users"></i> Employees</div>
+                    <div class="nav-link" onclick="nav('settings')"><i class="fas fa-cog"></i> Settings</div>
                 </div>
+            </nav>
 
-                <!-- ===== MY REQUESTS PAGE ===== -->
-                <div id="page-my-req" class="page-section hidden">
-                    <div class="page-header">
-                        <h3>طلباتي</h3>
-                        <p class="subtitle">سجل جميع طلبات الإجازة الخاصة بك</p>
-                    </div>
-
-                    <div class="card-custom">
-                        <div class="table-responsive">
-                            <table class="table-custom">
-                                <thead>
-                                    <tr>
-                                        <th>تاريخ التقديم</th>
-                                        <th>نوع الإجازة</th>
-                                        <th>من تاريخ</th>
-                                        <th>إلى تاريخ</th>
-                                        <th>الأيام</th>
-                                        <th>الحالة</th>
-                                        <th>ملاحظات</th>
-                                        <th>المرفقات</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tb-my-req"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ===== TEAM CALENDAR ===== -->
-                <div id="page-team-calendar" class="page-section hidden">
-                    <div class="page-header">
-                        <h3>تقويم الفريق</h3>
-                        <p class="subtitle">شاهد إجازات زملائك في الفريق</p>
-                    </div>
-
-                    <div class="card-custom">
-                        <div id="team-calendar-view"></div>
-                    </div>
-                </div>
-
-                <!-- ===== ADMIN REQUESTS PAGE ===== -->
-                <div id="page-admin-req" class="page-section hidden">
-                    <div class="page-header">
-                        <h3>إدارة طلبات الإجازات</h3>
-                        <p class="subtitle">مراجعة وموافقة/رفض طلبات الموظفين</p>
-                    </div>
-
-                    <div class="card-custom">
-                        <div class="table-responsive">
-                            <table class="table-custom">
-                                <thead>
-                                    <tr>
-                                        <th>الموظف</th>
-                                        <th>نوع الإجازة</th>
-                                        <th>من تاريخ</th>
-                                        <th>إلى تاريخ</th>
-                                        <th>الأيام</th>
-                                        <th>الحالة</th>
-                                        <th>المرفقات</th>
-                                        <th>الإجراءات</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tb-admin-req"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ===== EMPLOYEES MANAGEMENT ===== -->
-                <div id="page-employees" class="page-section hidden">
-                    <div class="page-header">
-                        <h3>إدارة الموظفين</h3>
-                        <p class="subtitle">إضافة وتعديل بيانات الموظفين</p>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="card-custom">
-                                <h6 class="mb-3">
-                                    <i class="fas fa-user-plus me-2"></i>
-                                    إضافة موظف جديد
-                                </h6>
-                                <input type="text" id="new-emp-username" class="form-control mb-2" placeholder="اسم المستخدم">
-                                <input type="password" id="new-emp-password" class="form-control mb-2" placeholder="كلمة المرور">
-                                <input type="text" id="new-emp-name" class="form-control mb-2" placeholder="الاسم الكامل">
-                                <input type="email" id="new-emp-email" class="form-control mb-2" placeholder="البريد الإلكتروني">
-                                <select id="new-emp-role" class="form-select mb-2">
-                                    <option value="Employee">موظف</option>
-                                    <option value="Admin">مدير</option>
-                                </select>
-                                <input type="number" id="new-emp-balance" class="form-control mb-3" placeholder="رصيد الإجازات" value="20">
-                                <button onclick="addEmployee()" class="btn btn-primary w-100">
-                                    <i class="fas fa-plus me-2"></i>
-                                    إضافة موظف
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="col-md-8">
-                            <div class="card-custom">
-                                <h6 class="mb-3">
-                                    <i class="fas fa-users me-2"></i>
-                                    قائمة الموظفين
-                                </h6>
-                                <div class="table-responsive">
-                                    <table class="table-custom">
-                                        <thead>
-                                            <tr>
-                                                <th>اسم المستخدم</th>
-                                                <th>الاسم</th>
-                                                <th>البريد</th>
-                                                <th>الصلاحية</th>
-                                                <th>الرصيد</th>
-                                                <th>الإجراءات</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tb-employees"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ===== SETTINGS PAGE ===== -->
-                <div id="page-settings" class="page-section hidden">
-                    <div class="page-header">
-                        <h3>إعدادات النظام</h3>
-                        <p class="subtitle">تكوين حدود الإجازات والقواعد الموسمية</p>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-4">
-                            <!-- Default Limit -->
-                            <div class="card-custom border border-primary">
-                                <h6 class="text-primary mb-3">
-                                    <i class="fas fa-sliders-h me-2"></i>
-                                    الحد اليومي الافتراضي
-                                </h6>
-                                <p class="small text-muted mb-3">الحد الأقصى للموظفين في إجازة يومياً</p>
-                                <div class="input-group">
-                                    <input type="number" id="default-limit" class="form-control" placeholder="مثال: 2" min="0">
-                                    <button onclick="updateDefault()" class="btn btn-primary">
-                                        <i class="fas fa-save me-2"></i>
-                                        حفظ
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Add Season -->
-                            <div class="card-custom mt-4">
-                                <h6 class="mb-3">
-                                    <i class="fas fa-calendar-plus me-2"></i>
-                                    إضافة قاعدة موسمية
-                                </h6>
-                                <p class="small text-muted mb-3">تحديد حدود خاصة لفترات محددة</p>
-                                
-                                <label class="form-label small">تاريخ البداية</label>
-                                <input type="date" id="s-start" class="form-control mb-3">
-                                
-                                <label class="form-label small">تاريخ النهاية</label>
-                                <input type="date" id="s-end" class="form-control mb-3">
-                                
-                                <label class="form-label small">الحد (0 = منع الكل)</label>
-                                <input type="number" id="s-limit" class="form-control mb-3" placeholder="مثال: 0" min="0">
-                                
-                                <button onclick="saveSeason()" class="btn btn-dark w-100">
-                                    <i class="fas fa-plus me-2"></i>
-                                    إضافة قاعدة
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="col-md-8">
-                            <div class="card-custom">
-                                <h6 class="mb-4">
-                                    <i class="fas fa-list me-2"></i>
-                                    القواعد الموسمية النشطة
-                                </h6>
-                                <div class="table-responsive">
-                                    <table class="table-custom">
-                                        <thead>
-                                            <tr>
-                                                <th>تاريخ البداية</th>
-                                                <th>تاريخ النهاية</th>
-                                                <th>الحد اليومي</th>
-                                                <th>الإجراء</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="tb-settings"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+            <div class="mt-auto position-absolute bottom-0 start-0 p-3 w-100">
+                <button onclick="location.reload()" class="btn btn-outline-light w-100 btn-sm"><i class="fas fa-sign-out-alt me-2"></i> Logout</button>
             </div>
+        </div>
+
+        <div class="main-content">
+            
+            <div id="page-home" class="page-section">
+                <h3 class="fw-bold mb-4">Dashboard</h3>
+                
+                <div id="admin-stats" class="row g-4 mb-4 hidden">
+                    <div class="col-md-3"><div class="stat-card"><h2 class="fw-bold" id="st-total">0</h2><small class="text-muted">Total Requests</small></div></div>
+                    <div class="col-md-3"><div class="stat-card" style="border-left-color: #f59e0b"><h2 class="fw-bold" id="st-pending">0</h2><small class="text-muted">Pending</small></div></div>
+                    <div class="col-md-3"><div class="stat-card" style="border-left-color: #10b981"><h2 class="fw-bold" id="st-approved">0</h2><small class="text-muted">Approved</small></div></div>
+                    <div class="col-md-3"><div class="stat-card" style="border-left-color: #ef4444"><h2 class="fw-bold" id="st-rejected">0</h2><small class="text-muted">Rejected</small></div></div>
+                </div>
+
+                <div class="card-custom">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-calendar-day me-2 text-primary"></i> Who's Out Today?</h6>
+                    <div id="team-view-container" class="d-flex flex-wrap gap-2">
+                        <small class="text-muted">Loading...</small>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-new-req" class="page-section hidden">
+                <h3 class="fw-bold mb-4">New Request</h3>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card-custom">
+                            <div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> Click dates on calendar to book. Red dates are blocked.</div>
+                            <div id="calendar"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-custom bg-primary text-white">
+                            <h5>Your Balance</h5>
+                            <h2 class="display-4 fw-bold mb-0" id="disp-balance">0</h2>
+                            <small>Days Available</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="page-my-req" class="page-section hidden">
+                <h3 class="fw-bold mb-4">My History</h3>
+                <div class="card-custom overflow-auto">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light"><tr><th>Date</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>Notes</th></tr></thead>
+                        <tbody id="tb-my-req"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="page-admin-req" class="page-section hidden">
+                <h3 class="fw-bold mb-4">Manage Requests</h3>
+                <div class="card-custom overflow-auto">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light"><tr><th>Employee</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody id="tb-admin-req"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="page-employees" class="page-section hidden">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold">Employees</h3>
+                    <button onclick="openAddEmpModal()" class="btn btn-primary"><i class="fas fa-user-plus me-2"></i> Add Employee</button>
+                </div>
+                <div class="card-custom overflow-auto">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light"><tr><th>Name</th><th>Username</th><th>Role</th><th>Email</th><th>Balance</th><th>Action</th></tr></thead>
+                        <tbody id="tb-employees"><tr><td colspan="6" class="text-center">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="page-settings" class="page-section hidden">
+                <h3 class="fw-bold mb-4">Settings</h3>
+                <div class="row">
+                    <div class="col-md-5">
+                        <div class="card-custom">
+                            <h6 class="fw-bold mb-3">Add Seasonal Rule</h6>
+                            <input type="date" id="s-start" class="form-control mb-2">
+                            <input type="date" id="s-end" class="form-control mb-2">
+                            <input type="number" id="s-limit" class="form-control mb-3" placeholder="Limit (0 = Block)">
+                            <button onclick="saveSeason()" class="btn btn-dark w-100">Add Rule</button>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card-custom">
+                            <table class="table table-sm">
+                                <thead><tr><th>Start</th><th>End</th><th>Limit</th><th>Action</th></tr></thead>
+                                <tbody id="tb-settings"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- MODALS -->
-    <!-- ============================================ -->
-
-    <!-- Leave Request Modal -->
     <div class="modal fade" id="reqModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-calendar-plus me-2"></i>
-                        طلب إجازة
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">تاريخ البداية</label>
-                            <input type="date" id="m-start" class="form-control" readonly>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">تاريخ النهاية</label>
-                            <input type="date" id="m-end" class="form-control">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">نوع الإجازة</label>
-                        <select id="m-type" class="form-select">
-                            <option value="Annual">إجازة سنوية (Annual)</option>
-                            <option value="Sick">إجازة مرضية (Sick)</option>
-                            <option value="Medical">إجازة طبية (Medical)</option>
-                            <option value="Maternity">إجازة أمومة (Maternity)</option>
-                            <option value="Paternity">إجازة أبوة (Paternity)</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">المدة</label>
-                        <select id="m-duration" class="form-select">
-                            <option value="Full">يوم كامل</option>
-                            <option value="Half">نصف يوم</option>
-                        </select>
-                    </div>
-
-                    <!-- File Upload for Medical/Sick Leave -->
-                    <div id="file-upload-section" class="mb-3 hidden">
-                        <label class="form-label">
-                            <i class="fas fa-paperclip me-2"></i>
-                            إرفاق شهادة طبية (اختياري)
-                        </label>
-                        <div class="file-upload-wrapper">
-                            <label class="file-upload-btn">
-                                <i class="fas fa-upload me-2"></i>
-                                اختر ملف
-                            </label>
-                            <input type="file" id="m-file" accept=".pdf,.jpg,.jpeg,.png">
-                        </div>
-                        <div id="file-info" class="file-info hidden"></div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">ملاحظات (اختياري)</label>
-                        <textarea id="m-notes" class="form-control" rows="3" placeholder="أضف أي معلومات إضافية..."></textarea>
-                    </div>
-                    
-                    <div class="alert-custom alert-info-custom">
-                        <i class="fas fa-info-circle"></i>
-                        <div>
-                            <strong>المدة:</strong> <span id="req-days">1</span> يوم<br>
-                            <strong>الرصيد المتبقي:</strong> <span id="req-balance">0</span> يوم
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button onclick="sendReq()" class="btn btn-primary">
-                        <i class="fas fa-paper-plane me-2"></i>
-                        تقديم الطلب
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Action Modal -->
-    <div class="modal fade" id="adminActionModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">مراجعة الطلب</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold">Submit Request</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <div id="admin-action-info" class="mb-3"></div>
                     <div class="mb-3">
-                        <label class="form-label">ملاحظات الإدارة (اختياري)</label>
-                        <textarea id="admin-notes" class="form-control" rows="3" placeholder="أضف ملاحظات للموظف..."></textarea>
+                        <label class="form-label small fw-bold">Duration</label>
+                        <select id="m-duration" class="form-select" onchange="calcDays()"><option value="Full">Full Day</option><option value="Half">Half Day (0.5)</option></select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col"><label class="small fw-bold">Start</label><input type="date" id="m-start" class="form-control" readonly></div>
+                        <div class="col"><label class="small fw-bold">End</label><input type="date" id="m-end" class="form-control" onchange="calcDays()"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold">Type</label>
+                        <select id="m-type" class="form-select"><option>Annual</option><option>Sick</option><option>Medical</option><option>Maternity</option><option>Paternity</option><option>Unpaid</option></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small fw-bold">Attachment (Optional)</label>
+                        <input type="file" id="m-file" class="form-control" accept="image/*,.pdf">
+                        <small class="text-muted">For Sick/Medical leaves (Max 2MB)</small>
+                    </div>
+                    <div class="mb-3"><textarea id="m-notes" class="form-control" placeholder="Notes..."></textarea></div>
+                    <div class="alert alert-secondary py-2 d-flex justify-content-between">
+                        <span>Days: <strong id="req-days">0</strong></span>
+                        <span>Balance: <strong id="req-bal">0</strong></span>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button onclick="confirmAdminAction('Rejected')" class="btn btn-danger">
-                        <i class="fas fa-times me-2"></i>
-                        رفض
-                    </button>
-                    <button onclick="confirmAdminAction('Approved')" class="btn btn-success">
-                        <i class="fas fa-check me-2"></i>
-                        موافقة
-                    </button>
-                </div>
+                <div class="modal-footer border-0 pt-0"><button onclick="sendReq()" class="btn btn-primary w-100">Submit</button></div>
             </div>
         </div>
     </div>
 
-    <!-- Change Password Modal -->
-    <div class="modal fade" id="changePasswordModal" tabindex="-1">
+    <div class="modal fade" id="empModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-key me-2"></i>
-                        تغيير كلمة المرور
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0"><h5 class="modal-title fw-bold">Add Employee</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">كلمة المرور الحالية</label>
-                        <input type="password" id="old-pass" class="form-control" placeholder="أدخل كلمة المرور الحالية">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">كلمة المرور الجديدة</label>
-                        <input type="password" id="new-pass" class="form-control" placeholder="أدخل كلمة المرور الجديدة">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">تأكيد كلمة المرور الجديدة</label>
-                        <input type="password" id="confirm-pass" class="form-control" placeholder="أعد إدخال كلمة المرور الجديدة">
-                    </div>
+                    <input type="text" id="e-name" class="form-control mb-2" placeholder="Full Name">
+                    <input type="text" id="e-user" class="form-control mb-2" placeholder="Username (ID)">
+                    <input type="password" id="e-pass" class="form-control mb-2" placeholder="Password">
+                    <input type="email" id="e-mail" class="form-control mb-2" placeholder="Email">
+                    <select id="e-role" class="form-select mb-2"><option value="Employee">Employee</option><option value="Admin">Admin</option></select>
+                    <input type="number" id="e-bal" class="form-control mb-2" placeholder="Initial Balance">
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button onclick="changePassword()" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>
-                        حفظ
-                    </button>
-                </div>
+                <div class="modal-footer border-0"><button onclick="addEmployee()" class="btn btn-primary w-100">Save</button></div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Employee Balance Modal -->
-    <div class="modal fade" id="editBalanceModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">تعديل رصيد الإجازات</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+    <div class="modal fade" id="balModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0"><h5 class="modal-title fw-bold">Update Balance</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <p class="mb-3">الموظف: <strong id="edit-emp-name"></strong></p>
-                    <div class="mb-3">
-                        <label class="form-label">الرصيد الجديد</label>
-                        <input type="number" id="edit-balance-value" class="form-control" min="0">
-                    </div>
+                    <input type="hidden" id="eb-user">
+                    <label class="small fw-bold">New Balance</label>
+                    <input type="number" id="eb-val" class="form-control" step="0.5">
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button onclick="saveEmployeeBalance()" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>
-                        حفظ
-                    </button>
-                </div>
+                <div class="modal-footer border-0"><button onclick="saveBalance()" class="btn btn-success w-100">Update</button></div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- ============================================ -->
-    <!-- MAIN APPLICATION SCRIPT -->
-    <!-- ============================================ -->
     <script>
-        // ===== Global Variables =====
         let DATA = {};
         let calendarObj = null;
-        let currentAdminRequestId = null;
-        let currentEditUsername = null;
-        let selectedFile = null;
 
-        // ===== Utility Functions =====
-        function showLoading(text) {
-            document.getElementById('loading-overlay').classList.remove('hidden');
-            if (text) {
-                document.querySelector('.loading-text').textContent = text;
-            }
-        }
-
-        function hideLoading() {
-            document.getElementById('loading-overlay').classList.add('hidden');
-        }
-
+        // --- CORE ---
         async function apiCall(payload) {
             try {
-                const res = await fetch(API_URL, {
-                    method: "POST",
-                    body: JSON.stringify(payload),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                }
-                
+                const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+                if (!res.ok) throw new Error("HTTP Error");
                 return await res.json();
-            } catch (error) {
-                console.error('API Call Error:', error);
-                throw error;
-            }
+            } catch (e) { console.error(e); throw e; }
         }
 
-        // ===== Authentication =====
         async function doLogin() {
             const u = document.getElementById('login-user').value.trim();
             const p = document.getElementById('login-pass').value.trim();
-
-            if (!u || !p) {
-                Swal.fire('خطأ', 'الرجاء إدخال اسم المستخدم وكلمة المرور', 'error');
-                return;
-            }
-
-            const btn = document.getElementById('btn-login');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> جاري الدخول...';
-            btn.disabled = true;
-
+            if(!u || !p) return Swal.fire('Error', 'Missing fields', 'error');
+            
+            document.getElementById('loading-overlay').classList.remove('hidden');
             try {
                 const res = await apiCall({ action: 'login', username: u, password: p });
-                
                 if (res.success) {
                     DATA = res;
                     initApp();
                 } else {
-                    Swal.fire('فشل تسجيل الدخول', res.message, 'error');
+                    Swal.fire('Failed', res.message, 'error');
                 }
-            } catch (e) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'خطأ في الاتصال',
-                    text: 'تعذر الاتصال بالخادم. الرجاء التحقق من رابط API.',
-                });
-            } finally {
-                btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i> تسجيل الدخول';
-                btn.disabled = false;
-            }
+            } catch (e) { Swal.fire('Error', 'Connection Failed', 'error'); }
+            document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        // ===== App Initialization =====
         function initApp() {
             document.getElementById('view-login').classList.add('hidden');
             document.getElementById('view-app').classList.remove('hidden');
-
-            document.getElementById('u-name').textContent = DATA.user.name || 'المستخدم';
-            document.getElementById('u-role').textContent = DATA.user.role || 'موظف';
-
-            if (DATA.user.role === 'Admin') {
+            
+            const u = DATA.user;
+            document.getElementById('u-name').innerText = u.name;
+            document.getElementById('u-role').innerText = u.role;
+            document.getElementById('u-balance').innerText = u.balance;
+            document.getElementById('disp-balance').innerText = u.balance;
+            
+            if (u.role === 'Admin') {
                 document.getElementById('menu-admin').classList.remove('hidden');
                 document.getElementById('admin-stats').classList.remove('hidden');
-                updateDashboard();
-                renderSettings();
+                document.getElementById('badge-pending').innerText = (DATA.allRequests||[]).filter(r=>r.status==='Pending').length || 0;
+                document.getElementById('badge-pending').classList.remove('hidden');
             } else {
                 document.getElementById('menu-emp').classList.remove('hidden');
-                document.getElementById('balance-display').classList.remove('hidden');
-                document.getElementById('u-balance').textContent = DATA.user.balance;
-                document.getElementById('emp-quick-stats').classList.remove('hidden');
-                document.getElementById('team-status').classList.remove('hidden');
-                updateEmployeeStats();
-                updateTeamStatus();
+                document.getElementById('balance-badge').classList.remove('hidden');
             }
 
-            renderMyRequests();
-            initCalendar();
+            renderDashboard();
             nav('home');
         }
 
-        // ===== Navigation =====
-        function nav(pageId) {
-            document.querySelectorAll('.page-section').forEach(page => {
-                page.classList.add('hidden');
-            });
-
-            document.getElementById('page-' + pageId).classList.remove('hidden');
-
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
-            if (event && event.target) {
-                event.target.closest('.nav-link').classList.add('active');
-            }
-
-            if (pageId === 'new-req' && calendarObj) {
-                setTimeout(() => {
-                    calendarObj.updateSize();
-                    calendarObj.render();
-                }, 200);
-            }
-
-            if (pageId === 'admin-req') {
-                renderAdminRequests();
-            }
-
-            if (pageId === 'employees') {
-                loadEmployees();
-            }
-
-            if (pageId === 'team-calendar') {
-                renderTeamCalendar();
-            }
-        }
-
-        // ===== Dashboard Updates =====
-        function updateDashboard() {
-            const r = DATA.allRequests || [];
-            document.getElementById('stat-total').textContent = r.length;
-            document.getElementById('stat-pending').textContent = r.filter(x => x.status === 'Pending').length;
-            document.getElementById('stat-approved').textContent = r.filter(x => x.status === 'Approved').length;
-            document.getElementById('stat-rejected').textContent = r.filter(x => x.status === 'Rejected').length;
-        }
-
-        function updateEmployeeStats() {
-            const myReqs = DATA.myRequests || [];
-            document.getElementById('emp-approved').textContent = myReqs.filter(r => r.status === 'Approved').length;
-            document.getElementById('emp-pending').textContent = myReqs.filter(r => r.status === 'Pending').length;
+        function nav(id) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden'));
+            document.getElementById('page-' + id).classList.remove('hidden');
             
-            const daysUsed = myReqs
-                .filter(r => r.status === 'Approved' && r.type === 'Annual')
-                .reduce((sum, r) => sum + (parseFloat(r.days) || 0), 0);
-            document.getElementById('emp-days-used').textContent = daysUsed;
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            if(event && event.target.closest('.nav-link')) event.target.closest('.nav-link').classList.add('active');
+
+            if(id === 'new-req' && !calendarObj) initCalendar();
+            if(id === 'new-req' && calendarObj) setTimeout(() => calendarObj.updateSize(), 200);
+            if(id === 'my-req') renderMyRequests();
+            if(id === 'admin-req') renderAdminRequests();
+            if(id === 'employees') loadEmployees();
+            if(id === 'settings') renderSettings();
         }
 
-        function updateTeamStatus() {
+        // --- DASHBOARD ---
+        function renderDashboard() {
+            const all = DATA.allRequests || [];
+            document.getElementById('st-total').innerText = all.length;
+            document.getElementById('st-pending').innerText = all.filter(r=>r.status==='Pending').length;
+            document.getElementById('st-approved').innerText = all.filter(r=>r.status==='Approved').length;
+            document.getElementById('st-rejected').innerText = all.filter(r=>r.status==='Rejected').length;
+
             const today = new Date().toISOString().split('T')[0];
-            const teamLeaves = DATA.teamLeaves || [];
-            const container = document.getElementById('team-status-container');
+            const leaves = DATA.teamLeaves || [];
+            const out = leaves.filter(l => today >= l.start && today <= l.end);
             
-            const todayAbsent = teamLeaves.filter(l => {
-                return today >= l.start && today <= l.end;
-            });
-
-            if (todayAbsent.length === 0) {
-                container.innerHTML = `
-                    <div class="alert-custom alert-success-custom">
-                        <i class="fas fa-check-circle"></i>
-                        <div>جميع أعضاء الفريق متواجدون اليوم</div>
-                    </div>
-                `;
+            const container = document.getElementById('team-view-container');
+            if(out.length === 0) {
+                container.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success p-2"><i class="fas fa-check me-2"></i> All Present</span>';
             } else {
-                container.innerHTML = todayAbsent.map(p => `
-                    <div class="d-flex align-items-center border-bottom py-3">
-                        <div class="bg-danger text-white rounded-circle d-flex justify-content-center align-items-center me-3" 
-                             style="width:45px;height:45px;font-size:1.2rem">
-                            ${p.name.charAt(0)}
-                        </div>
-                        <div>
-                            <div class="fw-bold">${p.name}</div>
-                            <small class="text-muted">${p.type} حتى ${p.end}</small>
-                        </div>
+                container.innerHTML = out.map(o => `
+                    <div class="d-flex align-items-center bg-light rounded p-2 border">
+                        <div class="bg-primary text-white rounded-circle d-flex center me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div>
+                        <div style="line-height:1.1"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type}</small></div>
                     </div>
                 `).join('');
             }
         }
 
-        // ===== Calendar =====
+        // --- CALENDAR & REQUEST ---
         function initCalendar() {
-            const el = document.getElementById('calendar');
-            if (!el) return;
-
-            calendarObj = new FullCalendar.Calendar(el, {
-                initialView: 'dayGridMonth',
-                height: 600,
-                locale: 'ar',
-                direction: 'rtl',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth'
-                },
+            calendarObj = new FullCalendar.Calendar(document.getElementById('calendar'), {
+                initialView: 'dayGridMonth', height: 500,
+                headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
+                dateClick: (info) => openReqModal(info.dateStr),
                 dayCellClassNames: (arg) => {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    if (arg.date < today) {
-                        return ['fc-day-past'];
-                    }
-
-                    const dateStr = arg.date.toISOString().split('T')[0];
-                    const limit = getDailyLimit(dateStr);
-                    const count = getApprovedCount(dateStr);
-
-                    if (limit === 0 || count >= limit) {
-                        return ['day-blocked'];
-                    } else if (count >= limit - 1) {
-                        return ['day-limited'];
-                    }
-
+                    const d = arg.date.toISOString().split('T')[0];
+                    if (d < new Date().toISOString().split('T')[0]) return ['bg-light'];
+                    // Logic for limits can be added here
                     return [];
-                },
-                dateClick: (info) => {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const clickedDate = new Date(info.dateStr);
-
-                    if (clickedDate < today) {
-                        Swal.fire('تاريخ سابق', 'لا يمكن طلب إجازة لتاريخ سابق', 'warning');
-                        return;
-                    }
-
-                    const limit = getDailyLimit(info.dateStr);
-                    const count = getApprovedCount(info.dateStr);
-
-                    if (limit === 0 || count >= limit) {
-                        Swal.fire('محجوز بالكامل', 'هذا التاريخ وصل للحد الأقصى', 'warning');
-                        return;
-                    }
-
-                    openRequestModal(info.dateStr);
                 }
             });
-
             calendarObj.render();
         }
 
-        function getDailyLimit(dateStr) {
-            const date = new Date(dateStr);
-            
-            const seasonal = (DATA.settings || []).filter(s => s.type === 'Season');
-            for (let rule of seasonal) {
-                const start = new Date(rule.start);
-                const end = new Date(rule.end);
-                if (date >= start && date <= end) {
-                    return rule.limit;
-                }
-            }
-
-            const defaultSetting = (DATA.settings || []).find(s => s.type === 'Default');
-            return defaultSetting ? defaultSetting.limit : 2;
-        }
-
-        function getApprovedCount(dateStr) {
-            const date = new Date(dateStr);
-            return (DATA.approvedRequests || []).filter(r => {
-                const start = new Date(r.start);
-                const end = new Date(r.end);
-                return date >= start && date <= end;
-            }).length;
-        }
-
-        // ===== Request Submission =====
-        function openRequestModal(dateStr) {
-            document.getElementById('m-start').value = dateStr;
-            document.getElementById('m-end').value = dateStr;
-            document.getElementById('m-notes').value = '';
+        function openReqModal(date) {
+            document.getElementById('m-start').value = date;
+            document.getElementById('m-end').value = date;
             document.getElementById('m-duration').value = 'Full';
-            document.getElementById('m-type').value = 'Annual';
-            selectedFile = null;
-            document.getElementById('file-info').classList.add('hidden');
-            document.getElementById('file-upload-section').classList.add('hidden');
-            
-            calculateDaysLogic();
-            
-            document.getElementById('m-end').addEventListener('change', calculateDaysLogic);
-            document.getElementById('m-duration').addEventListener('change', calculateDaysLogic);
-            
-            // Show file upload for Medical/Sick
-            document.getElementById('m-type').addEventListener('change', function() {
-                const type = this.value;
-                const fileSection = document.getElementById('file-upload-section');
-                if (type === 'Sick' || type === 'Medical') {
-                    fileSection.classList.remove('hidden');
-                } else {
-                    fileSection.classList.add('hidden');
-                }
-            });
-
-            // File selection handler
-            document.getElementById('m-file').addEventListener('change', function(e) {
-                if (e.target.files && e.target.files[0]) {
-                    const file = e.target.files[0];
-                    const maxSize = 5 * 1024 * 1024; // 5MB
-
-                    if (file.size > maxSize) {
-                        Swal.fire('خطأ', 'حجم الملف يجب أن يكون أقل من 5 ميجابايت', 'error');
-                        e.target.value = '';
-                        return;
-                    }
-
-                    selectedFile = file;
-                    document.getElementById('file-info').innerHTML = `
-                        <i class="fas fa-file-pdf me-2"></i>
-                        ${file.name} (${(file.size / 1024).toFixed(2)} KB)
-                    `;
-                    document.getElementById('file-info').classList.remove('hidden');
-                }
-            });
-            
+            document.getElementById('req-bal').innerText = DATA.user.balance;
+            calcDays();
             new bootstrap.Modal(document.getElementById('reqModal')).show();
         }
 
-        function calculateDaysLogic() {
-            const start = document.getElementById('m-start').value;
-            const end = document.getElementById('m-end').value;
-            const duration = document.getElementById('m-duration').value;
-            
-            if (start && end) {
-                if (duration === 'Half') {
-                    document.getElementById('m-end').value = start;
-                    document.getElementById('req-days').textContent = "0.5";
-                } else {
-                    const d1 = new Date(start);
-                    const d2 = new Date(end);
-                    const diff = Math.abs(d2 - d1);
-                    const days = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
-                    document.getElementById('req-days').textContent = days;
-                }
-                document.getElementById('req-balance').textContent = DATA.user.balance;
+        function calcDays() {
+            const s = document.getElementById('m-start').value;
+            const e = document.getElementById('m-end').value;
+            const dur = document.getElementById('m-duration').value;
+            if(dur === 'Half') {
+                document.getElementById('m-end').value = s;
+                document.getElementById('req-days').innerText = "0.5";
+            } else {
+                const d1 = new Date(s); const d2 = new Date(e);
+                const diff = Math.abs(d2-d1);
+                document.getElementById('req-days').innerText = Math.ceil(diff/(1000*60*60*24))+1;
             }
         }
 
         async function sendReq() {
-            const start = document.getElementById('m-start').value;
-            const end = document.getElementById('m-end').value;
-            const type = document.getElementById('m-type').value;
-            const notes = document.getElementById('m-notes').value;
-            const days = parseFloat(document.getElementById('req-days').textContent);
+            const form = {
+                username: DATA.user.username,
+                name: DATA.user.name,
+                start: document.getElementById('m-start').value,
+                end: document.getElementById('m-end').value,
+                days: document.getElementById('req-days').innerText,
+                type: document.getElementById('m-type').value,
+                notes: document.getElementById('m-notes').value
+            };
 
-            if (new Date(end) < new Date(start)) {
-                Swal.fire('خطأ', 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية', 'error');
-                return;
-            }
+            const fileInput = document.getElementById('m-file');
+            let fileData = null;
 
-            showLoading('جاري إرسال الطلب...');
-            bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide();
-
-            try {
-                let fileData = null;
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                if (file.size > 2 * 1024 * 1024) return Swal.fire('Error', 'File too large (Max 2MB)', 'error');
                 
-                // Convert file to base64 if exists
-                if (selectedFile) {
-                    const reader = new FileReader();
-                    fileData = await new Promise((resolve, reject) => {
-                        reader.onload = (e) => resolve({
-                            name: selectedFile.name,
-                            type: selectedFile.type,
-                            data: e.target.result
-                        });
-                        reader.onerror = reject;
-                        reader.readAsDataURL(selectedFile);
-                    });
-                }
-
-                const res = await apiCall({
-                    action: 'submitRequest',
-                    form: {
-                        username: DATA.user.username,
-                        name: DATA.user.name,
-                        start,
-                        end,
-                        days,
-                        type,
-                        notes
-                    },
-                    fileData: fileData
-                });
-
-                if (res.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'تم إرسال الطلب!',
-                        text: res.message,
-                        timer: 2000
-                    });
-                    await refreshData();
-                } else {
-                    Swal.fire('خطأ', res.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('خطأ', 'فشل إرسال الطلب', 'error');
-            } finally {
-                hideLoading();
+                // Read file
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    fileData = { name: file.name, type: file.type, data: reader.result };
+                    submitData(form, fileData);
+                };
+                reader.onerror = () => Swal.fire('Error', 'File read failed', 'error');
+            } else {
+                submitData(form, null);
             }
         }
 
-        // ===== My Requests =====
-        function renderMyRequests() {
-            const tbody = document.getElementById('tb-my-req');
-            const r = DATA.myRequests || [];
-
-            if (r.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
-                            <i class="fas fa-folder-open fa-3x mb-3 d-block"></i>
-                            لا توجد طلبات بعد
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = r.map(req => `
-                <tr>
-                    <td>${req.timestamp}</td>
-                    <td><span class="badge bg-secondary">${req.type}</span></td>
-                    <td>${req.start}</td>
-                    <td>${req.end}</td>
-                    <td><strong>${req.days || 1}</strong></td>
-                    <td><span class="badge-status bg-${req.status.toLowerCase()}">${req.status}</span></td>
-                    <td>${req.notes || '—'}</td>
-                    <td>
-                        ${req.attachment ? 
-                            `<a href="${req.attachment}" target="_blank" class="btn btn-sm btn-primary">
-                                <i class="fas fa-file-pdf"></i> عرض
-                            </a>` 
-                            : '—'}
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // ===== Admin Requests =====
-        function renderAdminRequests() {
-            const tbody = document.getElementById('tb-admin-req');
-            const r = DATA.allRequests || [];
-
-            if (r.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
-                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
-                            لا توجد طلبات
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = r.map(x => `
-                <tr>
-                    <td>
-                        <strong>${x.name}</strong><br>
-                        <small class="text-muted">${x.username}</small>
-                    </td>
-                    <td><span class="badge bg-secondary">${x.type}</span></td>
-                    <td>${x.start}</td>
-                    <td>${x.end}</td>
-                    <td><strong>${x.days || 1}</strong></td>
-                    <td><span class="badge-status bg-${x.status.toLowerCase()}">${x.status}</span></td>
-                    <td>
-                        ${x.attachment ? 
-                            `<a href="${x.attachment}" target="_blank" class="btn btn-sm btn-primary">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>` 
-                            : '—'}
-                    </td>
-                    <td>
-                        ${x.status === 'Pending' ? 
-                            `<button onclick="openAdminAction('${x.id}', '${x.name}', '${x.start}', '${x.end}', '${x.days}')" 
-                                class="btn btn-sm btn-primary">
-                                <i class="fas fa-eye me-1"></i> مراجعة
-                            </button>` 
-                            : '<span class="text-muted">—</span>'}
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function openAdminAction(id, name, start, end, days) {
-            currentAdminRequestId = id;
-            
-            document.getElementById('admin-action-info').innerHTML = `
-                <div class="alert-custom alert-info-custom">
-                    <i class="fas fa-user-circle"></i>
-                    <div>
-                        <strong>الموظف:</strong> ${name}<br>
-                        <strong>الفترة:</strong> ${start} إلى ${end}<br>
-                        <strong>المدة:</strong> ${days} يوم
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('admin-notes').value = '';
-            new bootstrap.Modal(document.getElementById('adminActionModal')).show();
-        }
-
-        async function confirmAdminAction(action) {
-            if (!currentAdminRequestId) return;
-
-            const notes = document.getElementById('admin-notes').value;
-            
-            showLoading('جاري المعالجة...');
-            bootstrap.Modal.getInstance(document.getElementById('adminActionModal')).hide();
-
+        async function submitData(form, fileData) {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide();
             try {
-                const res = await apiCall({
-                    action: 'adminAction',
-                    id: currentAdminRequestId,
-                    act: action,
-                    notes: notes
-                });
-
+                const res = await apiCall({ action: 'submitRequest', form: form, fileData: fileData });
                 if (res.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: action === 'Approved' ? 'تمت الموافقة!' : 'تم الرفض',
-                        text: res.message,
-                        timer: 2000
-                    });
+                    Swal.fire('Success', 'Request Sent', 'success');
                     await refreshData();
-                } else {
-                    Swal.fire('خطأ', res.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('خطأ', 'فشلت العملية', 'error');
-            } finally {
-                hideLoading();
-            }
+                } else { Swal.fire('Error', res.message, 'error'); }
+            } catch (e) { Swal.fire('Error', 'Failed', 'error'); }
+            document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        // ===== Employee Management =====
+        // --- ADMIN: EMPLOYEES ---
         async function loadEmployees() {
-            showLoading('جاري تحميل الموظفين...');
-            
+            const tb = document.getElementById('tb-employees');
+            tb.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
             try {
                 const res = await apiCall({ action: 'getAllEmployees' });
-                
                 if (res.success) {
-                    renderEmployees(res.employees);
+                    tb.innerHTML = res.employees.map(e => `
+                        <tr>
+                            <td><div class="fw-bold">${e.name}</div></td>
+                            <td>${e.username}</td>
+                            <td><span class="badge bg-secondary">${e.role}</span></td>
+                            <td>${e.email}</td>
+                            <td>${e.balance}</td>
+                            <td>
+                                <button onclick="openBalModal('${e.username}', ${e.balance})" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i> Balance</button>
+                            </td>
+                        </tr>
+                    `).join('');
                 }
-            } catch (error) {
-                Swal.fire('خطأ', 'فشل تحميل الموظفين', 'error');
-            } finally {
-                hideLoading();
-            }
+            } catch (e) { tb.innerHTML = '<tr><td colspan="6" class="text-danger">Error loading data</td></tr>'; }
         }
 
-        function renderEmployees(employees) {
-            const tbody = document.getElementById('tb-employees');
-            
-            if (!employees || employees.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">لا يوجد موظفون</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = employees.map(emp => `
-                <tr>
-                    <td>${emp.username}</td>
-                    <td>${emp.name}</td>
-                    <td>${emp.email}</td>
-                    <td><span class="badge bg-primary">${emp.role}</span></td>
-                    <td><strong>${emp.balance}</strong> يوم</td>
-                    <td>
-                        <button onclick="editEmployeeBalance('${emp.username}', '${emp.name}', ${emp.balance})" 
-                                class="btn btn-sm btn-warning">
-                            <i class="fas fa-edit"></i> تعديل الرصيد
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
+        function openAddEmpModal() { new bootstrap.Modal(document.getElementById('empModal')).show(); }
 
         async function addEmployee() {
-            const username = document.getElementById('new-emp-username').value.trim();
-            const password = document.getElementById('new-emp-password').value.trim();
-            const name = document.getElementById('new-emp-name').value.trim();
-            const email = document.getElementById('new-emp-email').value.trim();
-            const role = document.getElementById('new-emp-role').value;
-            const balance = document.getElementById('new-emp-balance').value;
-
-            if (!username || !password || !name || !email) {
-                Swal.fire('خطأ', 'جميع الحقول مطلوبة', 'error');
-                return;
-            }
-
-            showLoading('جاري الإضافة...');
-
+            const emp = {
+                name: document.getElementById('e-name').value,
+                username: document.getElementById('e-user').value,
+                password: document.getElementById('e-pass').value,
+                email: document.getElementById('e-mail').value,
+                role: document.getElementById('e-role').value,
+                balance: document.getElementById('e-bal').value
+            };
+            if(!emp.username || !emp.password) return Swal.fire('Error', 'Missing fields', 'warning');
+            
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            bootstrap.Modal.getInstance(document.getElementById('empModal')).hide();
+            
             try {
-                const res = await apiCall({
-                    action: 'addEmployee',
-                    employee: { username, password, name, email, role, balance }
-                });
-
-                if (res.success) {
-                    Swal.fire('نجح!', res.message, 'success');
-                    
-                    // Clear form
-                    document.getElementById('new-emp-username').value = '';
-                    document.getElementById('new-emp-password').value = '';
-                    document.getElementById('new-emp-name').value = '';
-                    document.getElementById('new-emp-email').value = '';
-                    document.getElementById('new-emp-balance').value = '20';
-                    
-                    await loadEmployees();
-                } else {
-                    Swal.fire('خطأ', res.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('خطأ', 'فشلت الإضافة', 'error');
-            } finally {
-                hideLoading();
-            }
+                const res = await apiCall({ action: 'addEmployee', employee: emp });
+                if (res.success) { Swal.fire('Success', 'Employee Added', 'success'); loadEmployees(); }
+                else Swal.fire('Error', res.message, 'error');
+            } catch (e) { Swal.fire('Error', 'Failed', 'error'); }
+            document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        function editEmployeeBalance(username, name, currentBalance) {
-            currentEditUsername = username;
-            document.getElementById('edit-emp-name').textContent = name;
-            document.getElementById('edit-balance-value').value = currentBalance;
-            new bootstrap.Modal(document.getElementById('editBalanceModal')).show();
+        function openBalModal(user, bal) {
+            document.getElementById('eb-user').value = user;
+            document.getElementById('eb-val').value = bal;
+            new bootstrap.Modal(document.getElementById('balModal')).show();
         }
 
-        async function saveEmployeeBalance() {
-            const newBalance = document.getElementById('edit-balance-value').value;
-
-            if (!newBalance || newBalance < 0) {
-                Swal.fire('خطأ', 'الرجاء إدخال قيمة صحيحة', 'error');
-                return;
-            }
-
-            showLoading('جاري الحفظ...');
-            bootstrap.Modal.getInstance(document.getElementById('editBalanceModal')).hide();
-
+        async function saveBalance() {
+            const u = document.getElementById('eb-user').value;
+            const b = document.getElementById('eb-val').value;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            bootstrap.Modal.getInstance(document.getElementById('balModal')).hide();
             try {
-                const res = await apiCall({
-                    action: 'updateBalance',
-                    username: currentEditUsername,
-                    balance: newBalance
-                });
-
-                if (res.success) {
-                    Swal.fire('نجح!', res.message, 'success');
-                    await loadEmployees();
-                } else {
-                    Swal.fire('خطأ', res.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('خطأ', 'فشل الحفظ', 'error');
-            } finally {
-                hideLoading();
-            }
+                await apiCall({ action: 'updateBalance', username: u, balance: b });
+                loadEmployees();
+                Swal.fire('Updated', '', 'success');
+            } catch(e) { Swal.fire('Error', 'Failed', 'error'); }
+            document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        // ===== Settings =====
-        function renderSettings() {
-            const defaultSetting = (DATA.settings || []).find(s => s.type === 'Default');
-            if (defaultSetting) {
-                document.getElementById('default-limit').value = defaultSetting.limit;
-            }
-
-            const seasons = (DATA.settings || []).filter(s => s.type === 'Season');
-            const tbody = document.getElementById('tb-settings');
-
-            if (seasons.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">لا توجد قواعد موسمية</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = seasons.map((s, i) => `
+        // --- LISTS & ACTIONS ---
+        function renderMyRequests() {
+            const list = DATA.myRequests || [];
+            document.getElementById('tb-my-req').innerHTML = list.map(r => `
                 <tr>
-                    <td>${s.start}</td>
-                    <td>${s.end}</td>
-                    <td><strong>${s.limit}</strong> ${s.limit === 0 ? '(محظور)' : ''}</td>
+                    <td>${r.timestamp}</td>
+                    <td><span class="badge bg-secondary">${r.type}</span></td>
+                    <td>${r.start} <i class="fas fa-arrow-right mx-1 small"></i> ${r.end}</td>
+                    <td>${r.days}</td>
+                    <td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td>
+                    <td>${r.attachment ? `<a href="${r.attachment}" target="_blank"><i class="fas fa-paperclip"></i></a>` : ''} ${r.notes}</td>
+                </tr>`).join('');
+        }
+
+        function renderAdminRequests() {
+            const list = DATA.allRequests || [];
+            document.getElementById('tb-admin-req').innerHTML = list.map(r => `
+                <tr>
+                    <td><div class="fw-bold">${r.name}</div><small class="text-muted">${r.username}</small></td>
+                    <td>${r.type}</td>
+                    <td>${r.start}<br>${r.end}</td>
+                    <td>${r.days}</td>
+                    <td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td>
                     <td>
-                        <button onclick="deleteRule(${i})" class="btn btn-sm btn-danger">
-                            <i class="fas fa-trash"></i> حذف
-                        </button>
+                        ${r.status === 'Pending' ? `
+                        <button onclick="adminAct('${r.id}', 'Approved')" class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
+                        <button onclick="adminAct('${r.id}', 'Rejected')" class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
+                        ` : ''}
+                        ${r.attachment ? `<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fas fa-paperclip"></i></a>` : ''}
                     </td>
-                </tr>
-            `).join('');
+                </tr>`).join('');
         }
 
-        async function updateDefault() {
-            const limit = document.getElementById('default-limit').value;
-
-            if (!limit || limit < 0) {
-                Swal.fire('خطأ', 'الرجاء إدخال قيمة صحيحة', 'error');
-                return;
-            }
-
-            showLoading();
-
+        async function adminAct(id, act) {
+            if(!confirm(act + "?")) return;
+            document.getElementById('loading-overlay').classList.remove('hidden');
             try {
-                const res = await apiCall({ action: 'updateDefault', limit: limit });
-                
-                if (res.success) {
-                    Swal.fire('نجح!', res.message, 'success');
-                    await refreshData();
-                } else {
-                    Swal.fire('خطأ', res.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('خطأ', 'فشل التحديث', 'error');
-            } finally {
-                hideLoading();
-            }
+                const res = await apiCall({ action: 'adminAction', id: id, act: act });
+                if(res.success) { Swal.fire('Done', res.message, 'success'); await refreshData(); }
+            } catch(e) { Swal.fire('Error', 'Failed', 'error'); }
+            document.getElementById('loading-overlay').classList.add('hidden');
         }
 
+        function renderSettings() {
+            const s = (DATA.settings||[]).filter(x=>x.type==='Season');
+            document.getElementById('tb-settings').innerHTML = s.map((x,i) => `<tr><td>${x.start}</td><td>${x.end}</td><td>${x.limit}</td><td><button onclick="delSet(${i})" class="btn btn-sm btn-danger">X</button></td></tr>`).join('');
+        }
         async function saveSeason() {
-            const start = document.getElementById('s-start').value;
-            const end = document.getElementById('s-end').value;
-            const limit = document.getElementById('s-limit').value;
-
-            if (!start || !end || limit === '') {
-                Swal.fire('خطأ', 'جميع الحقول مطلوبة', 'error');
-                return;
-            }
-
-            if (new Date(end) < new Date(start)) {
-                Swal.fire('خطأ', 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية', 'error');
-                return;
-            }
-
-            showLoading();
-
-            try {
-                const res = await apiCall({
-                    action: 'saveSeason',
-                    start,
-                    end,
-                    limit
-                });
-
-                if (res.success) {
-                    Swal.fire('نجح!', res.message, 'success');
-                    
-                    document.getElementById('s-start').value = '';
-                    document.getElementById('s-end').value = '';
-                    document.getElementById('s-limit').value = '';
-
-                    await refreshData();
-                } else {
-                    Swal.fire('خطأ', res.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('خطأ', 'فشل الحفظ', 'error');
-            } finally {
-                hideLoading();
-            }
+            await apiCall({ action: 'saveSeason', start: document.getElementById('s-start').value, end: document.getElementById('s-end').value, limit: document.getElementById('s-limit').value });
+            await refreshData();
         }
+        async function delSet(i) { await apiCall({ action: 'deleteSetting', index: i }); await refreshData(); }
 
-        async function deleteRule(index) {
-            const result = await Swal.fire({
-                title: 'حذف القاعدة؟',
-                text: 'لا يمكن التراجع عن هذا الإجراء',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonText: 'إلغاء',
-                confirmButtonText: 'نعم، احذف'
-            });
-
-            if (!result.isConfirmed) return;
-
-            showLoading();
-
-            try {
-                const res = await apiCall({ action: 'deleteSetting', index });
-                
-                if (res.success) {
-                    Swal.fire('تم الحذف!', res.message, 'success');
-                    await refreshData();
-                } else {
-                    Swal.fire('خطأ', res.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('خطأ', 'فشل الحذف', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // ===== Change Password =====
-        function openChangePassword() {
-            document.getElementById('old-pass').value = '';
-            document.getElementById('new-pass').value = '';
-            document.getElementById('confirm-pass').value = '';
-            new bootstrap.Modal(document.getElementById('changePasswordModal')).show();
-        }
-
-        async function changePassword() {
-            const oldPass = document.getElementById('old-pass').value;
-            const newPass = document.getElementById('new-pass').value;
-            const confirmPass = document.getElementById('confirm-pass').value;
-
-            if (!oldPass || !newPass || !confirmPass) {
-                Swal.fire('خطأ', 'جميع الحقول مطلوبة', 'error');
-                return;
-            }
-
-            if (newPass !== confirmPass) {
-                Swal.fire('خطأ', 'كلمات المرور الجديدة غير متطابقة', 'error');
-                return;
-            }
-
-            if (newPass.length < 4) {
-                Swal.fire('خطأ', 'كلمة المرور يجب أن تكون 4 أحرف على الأقل', 'error');
-                return;
-            }
-
-            showLoading();
-            bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
-
-            try {
-                const res = await apiCall({
-                    action: 'changePassword',
-                    username: DATA.user.username,
-                    oldPass,
-                    newPass
-                });
-
-                if (res.success) {
-                    Swal.fire('نجح!', res.message, 'success');
-                } else {
-                    Swal.fire('خطأ', res.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('خطأ', 'فشل تغيير كلمة المرور', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // ===== Export Data =====
-        async function exportData() {
-            showLoading('جاري التصدير...');
-
-            try {
-                const res = await apiCall({
-                    action: 'exportRequests',
-                    username: DATA.user.username,
-                    role: DATA.user.role
-                });
-
-                if (res.success && res.data) {
-                    const csv = convertToCSV(res.data);
-                    downloadCSV(csv, 'leave_requests_export.csv');
-                    
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'تم التصدير',
-                        text: `تم تصدير ${res.count} سجل`,
-                        timer: 2000
-                    });
-                } else {
-                    Swal.fire('خطأ', 'فشل التصدير', 'error');
-                }
-            } catch (error) {
-                Swal.fire('خطأ', 'فشل التصدير', 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        function convertToCSV(data) {
-            if (!data || data.length === 0) return '';
-
-            const headers = Object.keys(data[0]);
-            const csvRows = [];
-
-            csvRows.push(headers.join(','));
-
-            for (const row of data) {
-                const values = headers.map(header => {
-                    const val = row[header];
-                    return typeof val === 'string' && val.includes(',') ? `"${val}"` : val;
-                });
-                csvRows.push(values.join(','));
-            }
-
-            return csvRows.join('\n');
-        }
-
-        function downloadCSV(csv, filename) {
-            const BOM = '\uFEFF';
-            const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }
-
-        // ===== Team Calendar =====
-        function renderTeamCalendar() {
-            const container = document.getElementById('team-calendar-view');
-            const teamLeaves = DATA.teamLeaves || [];
-
-            if (teamLeaves.length === 0) {
-                container.innerHTML = `
-                    <div class="alert-custom alert-info-custom">
-                        <i class="fas fa-info-circle"></i>
-                        <div>لا توجد إجازات معتمدة للفريق حالياً</div>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = `
-                <div class="table-responsive">
-                    <table class="table-custom">
-                        <thead>
-                            <tr>
-                                <th>الموظف</th>
-                                <th>نوع الإجازة</th>
-                                <th>من تاريخ</th>
-                                <th>إلى تاريخ</th>
-                                <th>الأيام</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${teamLeaves.map(leave => `
-                                <tr>
-                                    <td><strong>${leave.name}</strong></td>
-                                    <td><span class="badge bg-secondary">${leave.type}</span></td>
-                                    <td>${leave.start}</td>
-                                    <td>${leave.end}</td>
-                                    <td><strong>${leave.days || 1}</strong></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        // ===== Refresh Data =====
         async function refreshData() {
-            try {
-                const res = await apiCall({
-                    action: 'login',
-                    username: DATA.user.username,
-                    password: 'refresh'
-                });
-
-                if (res.success) {
-                    DATA = res;
-                    
-                    if (DATA.user.role === 'Admin') {
-                        updateDashboard();
-                        renderSettings();
-                        renderAdminRequests();
-                    } else {
-                        document.getElementById('u-balance').textContent = DATA.user.balance;
-                        updateEmployeeStats();
-                        updateTeamStatus();
-                    }
-
-                    renderMyRequests();
-                    
-                    if (calendarObj) {
-                        calendarObj.refetchEvents();
-                        calendarObj.render();
-                    }
-                }
-            } catch (error) {
-                console.error('Refresh failed:', error);
-            }
-        }
-
-        // ===== PWA Support =====
-        let deferredPrompt;
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            if (ENABLE_PWA) {
-                document.getElementById('install-pwa-btn').classList.remove('hidden');
-            }
-        });
-
-        document.getElementById('install-pwa-btn').addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            
-            deferredPrompt = null;
-            document.getElementById('install-pwa-btn').classList.add('hidden');
-        });
-
-        // ===== Service Worker Registration =====
-        if (ENABLE_PWA && 'serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('SW registered'))
-                    .catch(err => console.log('SW registration failed'));
-            });
+            const res = await apiCall({ action: 'login', username: DATA.user.username, password: 'refresh' }); // Note: Pass refresh logic or store creds
+            if (res.success) { DATA = res; initApp(); }
         }
     </script>
 </body>
