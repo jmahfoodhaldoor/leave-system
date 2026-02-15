@@ -30,15 +30,18 @@
         /* Components */
         .nav-link { color: #94a3b8; padding: 12px 15px; margin: 5px 0; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
         .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; transform: translateX(5px); }
-        .nav-link i { width: 20px; text-align: center; }
         
         .card-custom { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px; border: 1px solid #e2e8f0; }
         .stat-card { background: white; padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
         .badge-status { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-        .bg-pending { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
-        .bg-approved { background: #f0fdf4; color: #15803d; border: 1px solid #dcfce7; }
-        .bg-rejected { background: #fef2f2; color: #b91c1c; border: 1px solid #fee2e2; }
+        
+        /* Calendar Specifics */
+        .fc-daygrid-day { cursor: pointer; transition: 0.2s; }
+        .fc-daygrid-day:hover { background-color: #f8fafc; }
+        .day-blocked { background-color: #fee2e2 !important; cursor: not-allowed !important; pointer-events: none; }
+        .day-limited { background-color: #fef3c7 !important; }
+        .day-past { background-color: #f1f5f9 !important; opacity: 0.5; pointer-events: none; }
 
         /* Login */
         #view-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
@@ -47,14 +50,14 @@
         @media (max-width: 768px) {
             .sidebar { left: -100%; }
             .sidebar.active { left: 0; }
-            .main-content { margin-left: 0; }
+            .main-content { margin-left: 0; padding: 15px; }
         }
     </style>
 </head>
 <body>
 
     <div id="loading-overlay" class="hidden">
-        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+        <div class="spinner-border text-primary" role="status"></div>
     </div>
 
     <div id="view-login">
@@ -65,14 +68,8 @@
                 <p class="text-muted small">Employee Portal</p>
             </div>
             <form onsubmit="event.preventDefault(); doLogin();">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Username</label>
-                    <input type="text" id="login-user" class="form-control" required>
-                </div>
-                <div class="mb-4">
-                    <label class="form-label small fw-bold">Password</label>
-                    <input type="password" id="login-pass" class="form-control" required>
-                </div>
+                <div class="mb-3"><label class="small fw-bold">Username</label><input type="text" id="login-user" class="form-control" required></div>
+                <div class="mb-4"><label class="small fw-bold">Password</label><input type="password" id="login-pass" class="form-control" required></div>
                 <button type="submit" id="btn-login" class="btn btn-primary w-100 py-2">Sign In</button>
             </form>
         </div>
@@ -84,9 +81,7 @@
             <div class="mb-4 p-3 rounded bg-white bg-opacity-10">
                 <div class="fw-bold" id="u-name">User</div>
                 <small class="text-white-50" id="u-role">Role</small>
-                <div id="balance-badge" class="mt-2 hidden">
-                    <span class="badge bg-success"><span id="u-balance">0</span> Days Balance</span>
-                </div>
+                <div id="balance-badge" class="mt-2 hidden"><span class="badge bg-success"><span id="u-balance">0</span> Days Balance</span></div>
             </div>
             
             <nav>
@@ -103,7 +98,6 @@
                     <div class="nav-link" onclick="nav('settings')"><i class="fas fa-cog"></i> Settings</div>
                 </div>
             </nav>
-
             <div class="mt-auto position-absolute bottom-0 start-0 p-3 w-100">
                 <button onclick="location.reload()" class="btn btn-outline-light w-100 btn-sm"><i class="fas fa-sign-out-alt me-2"></i> Logout</button>
             </div>
@@ -113,19 +107,15 @@
             
             <div id="page-home" class="page-section">
                 <h3 class="fw-bold mb-4">Dashboard</h3>
-                
                 <div id="admin-stats" class="row g-4 mb-4 hidden">
                     <div class="col-md-3"><div class="stat-card"><h2 class="fw-bold" id="st-total">0</h2><small class="text-muted">Total Requests</small></div></div>
                     <div class="col-md-3"><div class="stat-card" style="border-left-color: #f59e0b"><h2 class="fw-bold" id="st-pending">0</h2><small class="text-muted">Pending</small></div></div>
                     <div class="col-md-3"><div class="stat-card" style="border-left-color: #10b981"><h2 class="fw-bold" id="st-approved">0</h2><small class="text-muted">Approved</small></div></div>
                     <div class="col-md-3"><div class="stat-card" style="border-left-color: #ef4444"><h2 class="fw-bold" id="st-rejected">0</h2><small class="text-muted">Rejected</small></div></div>
                 </div>
-
                 <div class="card-custom">
                     <h6 class="fw-bold mb-3"><i class="fas fa-calendar-day me-2 text-primary"></i> Who's Out Today?</h6>
-                    <div id="team-view-container" class="d-flex flex-wrap gap-2">
-                        <small class="text-muted">Loading...</small>
-                    </div>
+                    <div id="team-view-container" class="d-flex flex-wrap gap-2"><small class="text-muted">Loading...</small></div>
                 </div>
             </div>
 
@@ -134,7 +124,7 @@
                 <div class="row">
                     <div class="col-md-8">
                         <div class="card-custom">
-                            <div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> Click dates on calendar to book. Red dates are blocked.</div>
+                            <div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> Red dates = Full. Yellow = Limited.</div>
                             <div id="calendar"></div>
                         </div>
                     </div>
@@ -151,33 +141,21 @@
             <div id="page-my-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">My History</h3>
                 <div class="card-custom overflow-auto">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light"><tr><th>Date</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>Notes</th></tr></thead>
-                        <tbody id="tb-my-req"></tbody>
-                    </table>
+                    <table class="table table-hover align-middle"><thead class="table-light"><tr><th>Date</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>Notes</th></tr></thead><tbody id="tb-my-req"></tbody></table>
                 </div>
             </div>
 
             <div id="page-admin-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">Manage Requests</h3>
                 <div class="card-custom overflow-auto">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light"><tr><th>Employee</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>Action</th></tr></thead>
-                        <tbody id="tb-admin-req"></tbody>
-                    </table>
+                    <table class="table table-hover align-middle"><thead class="table-light"><tr><th>Employee</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>Action</th></tr></thead><tbody id="tb-admin-req"></tbody></table>
                 </div>
             </div>
 
             <div id="page-employees" class="page-section hidden">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="fw-bold">Employees</h3>
-                    <button onclick="openAddEmpModal()" class="btn btn-primary"><i class="fas fa-user-plus me-2"></i> Add Employee</button>
-                </div>
+                <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold">Employees</h3><button onclick="openAddEmpModal()" class="btn btn-primary">Add Employee</button></div>
                 <div class="card-custom overflow-auto">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light"><tr><th>Name</th><th>Username</th><th>Role</th><th>Email</th><th>Balance</th><th>Action</th></tr></thead>
-                        <tbody id="tb-employees"><tr><td colspan="6" class="text-center">Loading...</td></tr></tbody>
-                    </table>
+                    <table class="table table-hover align-middle"><thead class="table-light"><tr><th>Name</th><th>Username</th><th>Role</th><th>Email</th><th>Balance</th><th>Action</th></tr></thead><tbody id="tb-employees"></tbody></table>
                 </div>
             </div>
 
@@ -189,21 +167,13 @@
                             <h6 class="fw-bold mb-3">Add Seasonal Rule</h6>
                             <input type="date" id="s-start" class="form-control mb-2">
                             <input type="date" id="s-end" class="form-control mb-2">
-                            <input type="number" id="s-limit" class="form-control mb-3" placeholder="Limit (0 = Block)">
+                            <input type="number" id="s-limit" class="form-control mb-3" placeholder="Limit">
                             <button onclick="saveSeason()" class="btn btn-dark w-100">Add Rule</button>
                         </div>
                     </div>
-                    <div class="col-md-7">
-                        <div class="card-custom">
-                            <table class="table table-sm">
-                                <thead><tr><th>Start</th><th>End</th><th>Limit</th><th>Action</th></tr></thead>
-                                <tbody id="tb-settings"></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="col-md-7"><div class="card-custom"><table class="table table-sm"><thead><tr><th>Start</th><th>End</th><th>Limit</th><th>Action</th></tr></thead><tbody id="tb-settings"></tbody></table></div></div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -212,70 +182,26 @@
             <div class="modal-content border-0 shadow">
                 <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold">Submit Request</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Duration</label>
-                        <select id="m-duration" class="form-select" onchange="calcDays()"><option value="Full">Full Day</option><option value="Half">Half Day (0.5)</option></select>
-                    </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col"><label class="small fw-bold">Start</label><input type="date" id="m-start" class="form-control" readonly></div>
-                        <div class="col"><label class="small fw-bold">End</label><input type="date" id="m-end" class="form-control" onchange="calcDays()"></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold">Type</label>
-                        <select id="m-type" class="form-select"><option>Annual</option><option>Sick</option><option>Medical</option><option>Maternity</option><option>Paternity</option><option>Unpaid</option></select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold">Attachment (Optional)</label>
-                        <input type="file" id="m-file" class="form-control" accept="image/*,.pdf">
-                        <small class="text-muted">For Sick/Medical leaves (Max 2MB)</small>
-                    </div>
+                    <div class="mb-3"><label class="small fw-bold">Duration</label><select id="m-duration" class="form-select" onchange="calcDays()"><option value="Full">Full Day</option><option value="Half">Half Day (0.5)</option></select></div>
+                    <div class="row g-2 mb-3"><div class="col"><label class="small fw-bold">Start</label><input type="date" id="m-start" class="form-control" readonly></div><div class="col"><label class="small fw-bold">End</label><input type="date" id="m-end" class="form-control" onchange="calcDays()"></div></div>
+                    <div class="mb-3"><label class="small fw-bold">Type</label><select id="m-type" class="form-select"><option>Annual</option><option>Sick</option><option>Medical</option><option>Maternity</option><option>Paternity</option><option>Unpaid</option></select></div>
+                    <div class="mb-3"><label class="small fw-bold">Attachment</label><input type="file" id="m-file" class="form-control" accept="image/*,.pdf"></div>
                     <div class="mb-3"><textarea id="m-notes" class="form-control" placeholder="Notes..."></textarea></div>
-                    <div class="alert alert-secondary py-2 d-flex justify-content-between">
-                        <span>Days: <strong id="req-days">0</strong></span>
-                        <span>Balance: <strong id="req-bal">0</strong></span>
-                    </div>
+                    <div class="alert alert-secondary py-2 d-flex justify-content-between"><span>Days: <strong id="req-days">0</strong></span><span>Balance: <strong id="req-bal">0</strong></span></div>
                 </div>
                 <div class="modal-footer border-0 pt-0"><button onclick="sendReq()" class="btn btn-primary w-100">Submit</button></div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="empModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0"><h5 class="modal-title fw-bold">Add Employee</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <input type="text" id="e-name" class="form-control mb-2" placeholder="Full Name">
-                    <input type="text" id="e-user" class="form-control mb-2" placeholder="Username (ID)">
-                    <input type="password" id="e-pass" class="form-control mb-2" placeholder="Password">
-                    <input type="email" id="e-mail" class="form-control mb-2" placeholder="Email">
-                    <select id="e-role" class="form-select mb-2"><option value="Employee">Employee</option><option value="Admin">Admin</option></select>
-                    <input type="number" id="e-bal" class="form-control mb-2" placeholder="Initial Balance">
-                </div>
-                <div class="modal-footer border-0"><button onclick="addEmployee()" class="btn btn-primary w-100">Save</button></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="balModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header border-0"><h5 class="modal-title fw-bold">Update Balance</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <input type="hidden" id="eb-user">
-                    <label class="small fw-bold">New Balance</label>
-                    <input type="number" id="eb-val" class="form-control" step="0.5">
-                </div>
-                <div class="modal-footer border-0"><button onclick="saveBalance()" class="btn btn-success w-100">Update</button></div>
-            </div>
-        </div>
-    </div>
+    <div class="modal fade" id="empModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Add Employee</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="e-name" class="form-control mb-2" placeholder="Full Name"><input type="text" id="e-user" class="form-control mb-2" placeholder="Username (ID)"><input type="password" id="e-pass" class="form-control mb-2" placeholder="Password"><input type="email" id="e-mail" class="form-control mb-2" placeholder="Email"><select id="e-role" class="form-select mb-2"><option value="Employee">Employee</option><option value="Admin">Admin</option></select><input type="number" id="e-bal" class="form-control mb-2" placeholder="Initial Balance"></div><div class="modal-footer border-0"><button onclick="addEmployee()" class="btn btn-primary w-100">Save</button></div></div></div></div>
+    
+    <div class="modal fade" id="balModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content border-0 shadow"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Update Balance</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="eb-user"><label class="small fw-bold">New Balance</label><input type="number" id="eb-val" class="form-control" step="0.5"></div><div class="modal-footer border-0"><button onclick="saveBalance()" class="btn btn-success w-100">Update</button></div></div></div></div>
 
     <script>
-        let DATA = {};
+        let DATA = { user: {}, settings: [], approvedRequests: [], myRequests: [], teamLeaves: [] };
         let calendarObj = null;
 
-        // --- CORE ---
         async function apiCall(payload) {
             try {
                 const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
@@ -292,12 +218,8 @@
             document.getElementById('loading-overlay').classList.remove('hidden');
             try {
                 const res = await apiCall({ action: 'login', username: u, password: p });
-                if (res.success) {
-                    DATA = res;
-                    initApp();
-                } else {
-                    Swal.fire('Failed', res.message, 'error');
-                }
+                if (res.success) { DATA = res; DATA.settings = DATA.settings||[]; DATA.approvedRequests = DATA.approvedRequests||[]; initApp(); } 
+                else { Swal.fire('Failed', res.message, 'error'); }
             } catch (e) { Swal.fire('Error', 'Connection Failed', 'error'); }
             document.getElementById('loading-overlay').classList.add('hidden');
         }
@@ -321,19 +243,14 @@
                 document.getElementById('menu-emp').classList.remove('hidden');
                 document.getElementById('balance-badge').classList.remove('hidden');
             }
-
             renderDashboard();
+            initCalendar();
             nav('home');
         }
 
         function nav(id) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden'));
             document.getElementById('page-' + id).classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            if(event && event.target.closest('.nav-link')) event.target.closest('.nav-link').classList.add('active');
-
-            if(id === 'new-req' && !calendarObj) initCalendar();
             if(id === 'new-req' && calendarObj) setTimeout(() => calendarObj.updateSize(), 200);
             if(id === 'my-req') renderMyRequests();
             if(id === 'admin-req') renderAdminRequests();
@@ -341,7 +258,6 @@
             if(id === 'settings') renderSettings();
         }
 
-        // --- DASHBOARD ---
         function renderDashboard() {
             const all = DATA.allRequests || [];
             document.getElementById('st-total').innerText = all.length;
@@ -350,36 +266,47 @@
             document.getElementById('st-rejected').innerText = all.filter(r=>r.status==='Rejected').length;
 
             const today = new Date().toISOString().split('T')[0];
-            const leaves = DATA.teamLeaves || [];
-            const out = leaves.filter(l => today >= l.start && today <= l.end);
-            
+            const out = (DATA.teamLeaves || []).filter(l => today >= l.start && today <= l.end);
             const container = document.getElementById('team-view-container');
-            if(out.length === 0) {
-                container.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success p-2"><i class="fas fa-check me-2"></i> All Present</span>';
-            } else {
-                container.innerHTML = out.map(o => `
-                    <div class="d-flex align-items-center bg-light rounded p-2 border">
-                        <div class="bg-primary text-white rounded-circle d-flex center me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div>
-                        <div style="line-height:1.1"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type}</small></div>
-                    </div>
-                `).join('');
-            }
+            container.innerHTML = out.length === 0 ? '<span class="badge bg-success bg-opacity-10 text-success p-2">All Present</span>' : 
+                out.map(o => `<div class="d-flex align-items-center bg-light rounded p-2 border"><div class="bg-primary text-white rounded-circle d-flex center me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div><div style="line-height:1.1"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type}</small></div></div>`).join('');
         }
 
-        // --- CALENDAR & REQUEST ---
+        // --- CALENDAR FIXED ---
         function initCalendar() {
-            calendarObj = new FullCalendar.Calendar(document.getElementById('calendar'), {
+            const el = document.getElementById('calendar');
+            if(!el) return;
+            calendarObj = new FullCalendar.Calendar(el, {
                 initialView: 'dayGridMonth', height: 500,
                 headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
-                dateClick: (info) => openReqModal(info.dateStr),
+                dateClick: (info) => {
+                    const today = new Date().toISOString().split('T')[0];
+                    if (info.dateStr < today) return Swal.fire('','Past Date','warning');
+                    if (getDailyLimit(info.dateStr) === 0 || getApprovedCount(info.dateStr) >= getDailyLimit(info.dateStr)) return Swal.fire('','Full','error');
+                    openReqModal(info.dateStr);
+                },
                 dayCellClassNames: (arg) => {
                     const d = arg.date.toISOString().split('T')[0];
-                    if (d < new Date().toISOString().split('T')[0]) return ['bg-light'];
-                    // Logic for limits can be added here
+                    const today = new Date().toISOString().split('T')[0];
+                    if (d < today) return ['day-past'];
+                    const lim = getDailyLimit(d);
+                    const cnt = getApprovedCount(d);
+                    if (lim === 0 || cnt >= lim) return ['day-blocked'];
+                    if (cnt >= lim - 1) return ['day-limited'];
                     return [];
                 }
             });
             calendarObj.render();
+        }
+
+        function getDailyLimit(d) {
+            const sea = (DATA.settings||[]).filter(s => s.type === 'Season');
+            for (let rule of sea) if (d >= rule.start && d <= rule.end) return rule.limit;
+            const def = (DATA.settings||[]).find(s => s.type === 'Default');
+            return def ? def.limit : 2;
+        }
+        function getApprovedCount(d) {
+            return (DATA.approvedRequests||[]).filter(r => d >= r.start && d <= r.end).length;
         }
 
         function openReqModal(date) {
@@ -407,33 +334,22 @@
 
         async function sendReq() {
             const form = {
-                username: DATA.user.username,
-                name: DATA.user.name,
-                start: document.getElementById('m-start').value,
-                end: document.getElementById('m-end').value,
-                days: document.getElementById('req-days').innerText,
-                type: document.getElementById('m-type').value,
+                username: DATA.user.username, name: DATA.user.name,
+                start: document.getElementById('m-start').value, end: document.getElementById('m-end').value,
+                days: document.getElementById('req-days').innerText, type: document.getElementById('m-type').value,
                 notes: document.getElementById('m-notes').value
             };
-
             const fileInput = document.getElementById('m-file');
             let fileData = null;
-
+            
             if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                if (file.size > 2 * 1024 * 1024) return Swal.fire('Error', 'File too large (Max 2MB)', 'error');
-                
-                // Read file
                 const reader = new FileReader();
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(fileInput.files[0]);
                 reader.onload = async () => {
-                    fileData = { name: file.name, type: file.type, data: reader.result };
+                    fileData = { name: fileInput.files[0].name, type: fileInput.files[0].type, data: reader.result };
                     submitData(form, fileData);
                 };
-                reader.onerror = () => Swal.fire('Error', 'File read failed', 'error');
-            } else {
-                submitData(form, null);
-            }
+            } else { submitData(form, null); }
         }
 
         async function submitData(form, fileData) {
@@ -441,120 +357,54 @@
             bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide();
             try {
                 const res = await apiCall({ action: 'submitRequest', form: form, fileData: fileData });
-                if (res.success) {
-                    Swal.fire('Success', 'Request Sent', 'success');
-                    await refreshData();
-                } else { Swal.fire('Error', res.message, 'error'); }
+                if (res.success) { Swal.fire('Success', '', 'success'); await refreshData(); } 
+                else { Swal.fire('Error', res.message, 'error'); }
             } catch (e) { Swal.fire('Error', 'Failed', 'error'); }
             document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        // --- ADMIN: EMPLOYEES ---
         async function loadEmployees() {
             const tb = document.getElementById('tb-employees');
             tb.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
             try {
                 const res = await apiCall({ action: 'getAllEmployees' });
                 if (res.success) {
-                    tb.innerHTML = res.employees.map(e => `
-                        <tr>
-                            <td><div class="fw-bold">${e.name}</div></td>
-                            <td>${e.username}</td>
-                            <td><span class="badge bg-secondary">${e.role}</span></td>
-                            <td>${e.email}</td>
-                            <td>${e.balance}</td>
-                            <td>
-                                <button onclick="openBalModal('${e.username}', ${e.balance})" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i> Balance</button>
-                            </td>
-                        </tr>
-                    `).join('');
+                    tb.innerHTML = res.employees.map(e => `<tr><td>${e.name}</td><td>${e.username}</td><td>${e.role}</td><td>${e.email}</td><td>${e.balance}</td><td><button onclick="openBalModal('${e.username}', ${e.balance})" class="btn btn-sm btn-outline-primary">Edit</button></td></tr>`).join('');
                 }
-            } catch (e) { tb.innerHTML = '<tr><td colspan="6" class="text-danger">Error loading data</td></tr>'; }
+            } catch (e) { tb.innerHTML = '<tr><td colspan="6">Error</td></tr>'; }
         }
 
         function openAddEmpModal() { new bootstrap.Modal(document.getElementById('empModal')).show(); }
-
         async function addEmployee() {
-            const emp = {
-                name: document.getElementById('e-name').value,
-                username: document.getElementById('e-user').value,
-                password: document.getElementById('e-pass').value,
-                email: document.getElementById('e-mail').value,
-                role: document.getElementById('e-role').value,
-                balance: document.getElementById('e-bal').value
-            };
-            if(!emp.username || !emp.password) return Swal.fire('Error', 'Missing fields', 'warning');
-            
+            const emp = { name: document.getElementById('e-name').value, username: document.getElementById('e-user').value, password: document.getElementById('e-pass').value, email: document.getElementById('e-mail').value, role: document.getElementById('e-role').value, balance: document.getElementById('e-bal').value };
             document.getElementById('loading-overlay').classList.remove('hidden');
             bootstrap.Modal.getInstance(document.getElementById('empModal')).hide();
-            
-            try {
-                const res = await apiCall({ action: 'addEmployee', employee: emp });
-                if (res.success) { Swal.fire('Success', 'Employee Added', 'success'); loadEmployees(); }
-                else Swal.fire('Error', res.message, 'error');
-            } catch (e) { Swal.fire('Error', 'Failed', 'error'); }
+            await apiCall({ action: 'addEmployee', employee: emp });
+            await loadEmployees();
             document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        function openBalModal(user, bal) {
-            document.getElementById('eb-user').value = user;
-            document.getElementById('eb-val').value = bal;
-            new bootstrap.Modal(document.getElementById('balModal')).show();
-        }
-
+        function openBalModal(u, b) { document.getElementById('eb-user').value = u; document.getElementById('eb-val').value = b; new bootstrap.Modal(document.getElementById('balModal')).show(); }
         async function saveBalance() {
-            const u = document.getElementById('eb-user').value;
-            const b = document.getElementById('eb-val').value;
             document.getElementById('loading-overlay').classList.remove('hidden');
             bootstrap.Modal.getInstance(document.getElementById('balModal')).hide();
-            try {
-                await apiCall({ action: 'updateBalance', username: u, balance: b });
-                loadEmployees();
-                Swal.fire('Updated', '', 'success');
-            } catch(e) { Swal.fire('Error', 'Failed', 'error'); }
+            await apiCall({ action: 'updateBalance', username: document.getElementById('eb-user').value, balance: document.getElementById('eb-val').value });
+            await loadEmployees();
             document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        // --- LISTS & ACTIONS ---
         function renderMyRequests() {
-            const list = DATA.myRequests || [];
-            document.getElementById('tb-my-req').innerHTML = list.map(r => `
-                <tr>
-                    <td>${r.timestamp}</td>
-                    <td><span class="badge bg-secondary">${r.type}</span></td>
-                    <td>${r.start} <i class="fas fa-arrow-right mx-1 small"></i> ${r.end}</td>
-                    <td>${r.days}</td>
-                    <td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td>
-                    <td>${r.attachment ? `<a href="${r.attachment}" target="_blank"><i class="fas fa-paperclip"></i></a>` : ''} ${r.notes}</td>
-                </tr>`).join('');
+            document.getElementById('tb-my-req').innerHTML = (DATA.myRequests||[]).map(r => `<tr><td>${r.timestamp}</td><td>${r.type}</td><td>${r.start} -> ${r.end}</td><td>${r.days}</td><td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td><td>${r.attachment ? '<a href="'+r.attachment+'" target="_blank">File</a>' : ''}</td></tr>`).join('');
         }
 
         function renderAdminRequests() {
-            const list = DATA.allRequests || [];
-            document.getElementById('tb-admin-req').innerHTML = list.map(r => `
-                <tr>
-                    <td><div class="fw-bold">${r.name}</div><small class="text-muted">${r.username}</small></td>
-                    <td>${r.type}</td>
-                    <td>${r.start}<br>${r.end}</td>
-                    <td>${r.days}</td>
-                    <td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td>
-                    <td>
-                        ${r.status === 'Pending' ? `
-                        <button onclick="adminAct('${r.id}', 'Approved')" class="btn btn-sm btn-success"><i class="fas fa-check"></i></button>
-                        <button onclick="adminAct('${r.id}', 'Rejected')" class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
-                        ` : ''}
-                        ${r.attachment ? `<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fas fa-paperclip"></i></a>` : ''}
-                    </td>
-                </tr>`).join('');
+            document.getElementById('tb-admin-req').innerHTML = (DATA.allRequests||[]).map(r => `<tr><td>${r.name}</td><td>${r.type}</td><td>${r.start}<br>${r.end}</td><td>${r.days}</td><td>${r.status}</td><td>${r.status==='Pending' ? `<button onclick="adminAct('${r.id}','Approved')" class="btn btn-sm btn-success">✔</button> <button onclick="adminAct('${r.id}','Rejected')" class="btn btn-sm btn-danger">✘</button>` : ''}</td></tr>`).join('');
         }
 
         async function adminAct(id, act) {
-            if(!confirm(act + "?")) return;
             document.getElementById('loading-overlay').classList.remove('hidden');
-            try {
-                const res = await apiCall({ action: 'adminAction', id: id, act: act });
-                if(res.success) { Swal.fire('Done', res.message, 'success'); await refreshData(); }
-            } catch(e) { Swal.fire('Error', 'Failed', 'error'); }
+            await apiCall({ action: 'adminAction', id: id, act: act });
+            await refreshData();
             document.getElementById('loading-overlay').classList.add('hidden');
         }
 
@@ -569,8 +419,8 @@
         async function delSet(i) { await apiCall({ action: 'deleteSetting', index: i }); await refreshData(); }
 
         async function refreshData() {
-            const res = await apiCall({ action: 'login', username: DATA.user.username, password: 'refresh' }); // Note: Pass refresh logic or store creds
-            if (res.success) { DATA = res; initApp(); }
+            const res = await apiCall({ action: 'login', username: DATA.user.username, password: 'refresh' });
+            if (res.success) { DATA = res; DATA.settings = DATA.settings||[]; DATA.approvedRequests = DATA.approvedRequests||[]; initApp(); }
         }
     </script>
 </body>
