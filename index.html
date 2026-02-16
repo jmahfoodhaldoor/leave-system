@@ -136,11 +136,9 @@
         </div>
 
         <div class="main-content">
-            <!-- Dashboard -->
             <div id="page-home" class="page-section">
                 <h3 class="fw-bold mb-4">Dashboard</h3>
                 
-                <!-- Admin Stats -->
                 <div id="admin-stats" class="row g-4 mb-4 hidden">
                     <div class="col-md-3">
                         <div class="stat-card">
@@ -168,7 +166,6 @@
                     </div>
                 </div>
 
-                <!-- Team Status -->
                 <div class="card-custom">
                     <h6 class="fw-bold mb-3">
                         <i class="fas fa-calendar-day me-2 text-primary"></i> 
@@ -180,7 +177,6 @@
                 </div>
             </div>
 
-            <!-- New Request -->
             <div id="page-new-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">New Request</h3>
                 <div class="row">
@@ -203,7 +199,6 @@
                 </div>
             </div>
 
-            <!-- My Requests -->
             <div id="page-my-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">My History</h3>
                 <div class="card-custom">
@@ -226,7 +221,6 @@
                 </div>
             </div>
 
-            <!-- Admin Requests -->
             <div id="page-admin-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">Manage Requests</h3>
                 <div class="card-custom">
@@ -249,7 +243,6 @@
                 </div>
             </div>
 
-            <!-- Employees -->
             <div id="page-employees" class="page-section hidden">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h3 class="fw-bold">Employees</h3>
@@ -276,7 +269,6 @@
                 </div>
             </div>
 
-            <!-- Settings -->
             <div id="page-settings" class="page-section hidden">
                 <h3 class="fw-bold mb-4">Settings</h3>
                 <div class="row">
@@ -318,7 +310,6 @@
         </div>
     </div>
 
-    <!-- Request Modal -->
     <div class="modal fade" id="reqModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
@@ -328,32 +319,30 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="small fw-bold">Duration</label>
-                        <select id="m-duration" class="form-select" onchange="calcDays()">
-                            <option value="Full">Full Day</option>
-                            <option value="Half">Half Day (0.5)</option>
+                        <label class="small fw-bold">Leave Type</label>
+                        <select id="m-type" class="form-select" onchange="updateModalUI()">
+                            <option value="Annual">Annual Leave</option>
+                            <option value="Medical">Medical Leave</option>
+                            <option value="Maternity">Maternity Leave</option>
+                            <option value="Paternity">Paternity Leave</option>
+                            <option value="Unpaid">Unpaid Leave</option>
                         </select>
                     </div>
+                    
+                    <div id="medical-warning" class="alert alert-warning small mb-3 hidden">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Please coordinate with your <strong>backup</strong> to cover your shift.
+                    </div>
+
                     <div class="row g-2 mb-3">
                         <div class="col">
-                            <label class="small fw-bold">Start Date</label>
+                            <label class="small fw-bold" id="label-start">Start Date</label>
                             <input type="date" id="m-start" class="form-control" readonly>
                         </div>
                         <div class="col">
                             <label class="small fw-bold">End Date</label>
                             <input type="date" id="m-end" class="form-control" onchange="calcDays()">
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small fw-bold">Leave Type</label>
-                        <select id="m-type" class="form-select">
-                            <option value="Annual">Annual Leave</option>
-                            <option value="Sick">Sick Leave</option>
-                            <option value="Medical">Medical Leave</option>
-                            <option value="Maternity">Maternity Leave</option>
-                            <option value="Paternity">Paternity Leave</option>
-                            <option value="Unpaid">Unpaid Leave</option>
-                        </select>
                     </div>
                     <div class="mb-3">
                         <label class="small fw-bold">Attachment (Optional)</label>
@@ -379,7 +368,6 @@
         </div>
     </div>
 
-    <!-- Add Employee Modal -->
     <div class="modal fade" id="empModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
@@ -408,7 +396,6 @@
         </div>
     </div>
 
-    <!-- Update Balance Modal -->
     <div class="modal fade" id="balModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content border-0 shadow-lg">
@@ -431,7 +418,6 @@
         </div>
     </div>
 
-    <!-- Change Password Modal -->
     <div class="modal fade" id="passModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
@@ -589,11 +575,7 @@
             calendarObj = new FullCalendar.Calendar(el, {
                 initialView: 'dayGridMonth',
                 height: 550,
-                headerToolbar: { 
-                    left: 'prev,next', 
-                    center: 'title', 
-                    right: 'today' 
-                },
+                headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 dateClick: (info) => {
                     const today = new Date().toISOString().split('T')[0];
                     if (info.dateStr < today) {
@@ -645,11 +627,12 @@
             try {
                 document.getElementById('m-start').value = date;
                 document.getElementById('m-end').value = date;
-                document.getElementById('m-duration').value = 'Full';
                 document.getElementById('m-type').value = 'Annual';
                 document.getElementById('m-notes').value = '';
                 document.getElementById('m-file').value = '';
                 document.getElementById('req-bal').textContent = DATA.user ? DATA.user.balance : 0;
+                
+                updateModalUI();
                 calcDays();
                 new bootstrap.Modal(document.getElementById('reqModal')).show();
             } catch(e) { 
@@ -657,15 +640,31 @@
             }
         }
 
+        function updateModalUI() {
+            const type = document.getElementById('m-type').value;
+            const warningBox = document.getElementById('medical-warning');
+            const startLabel = document.getElementById('label-start');
+
+            // Toggle Medical Warning
+            if (type === 'Medical') {
+                warningBox.classList.remove('hidden');
+            } else {
+                warningBox.classList.add('hidden');
+            }
+
+            // Change Label for Maternity/Paternity
+            if (type === 'Maternity' || type === 'Paternity') {
+                startLabel.innerText = "Expected Start Date";
+            } else {
+                startLabel.innerText = "Start Date";
+            }
+        }
+
         function calcDays() {
             const s = document.getElementById('m-start').value;
             const e = document.getElementById('m-end').value;
-            const dur = document.getElementById('m-duration').value;
             
-            if (dur === 'Half') {
-                document.getElementById('m-end').value = s;
-                document.getElementById('req-days').textContent = "0.5";
-            } else if (s && e) {
+            if (s && e) {
                 const d1 = new Date(s);
                 const d2 = new Date(e);
                 const diff = Math.abs(d2 - d1);
@@ -688,9 +687,41 @@
             const fileInput = document.getElementById('m-file');
             let fileData = null;
             
-            // Validation
+            // --- VALIDATION RULES ---
+
+            // 1. Date Logic
             if (new Date(form.end) < new Date(form.start)) {
                 return Swal.fire('Invalid Dates', 'End date must be after or equal to start date', 'error');
+            }
+
+            // 2. 48-Hour Rule (Annual, Unpaid, Maternity, Paternity)
+            const restrictedTypes = ['Annual', 'Unpaid', 'Maternity', 'Paternity'];
+            if (restrictedTypes.includes(form.type)) {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const minDate = new Date(today);
+                minDate.setDate(today.getDate() + 2); // Must be at least 2 days from today
+                
+                const selectedStart = new Date(form.start);
+                selectedStart.setHours(0,0,0,0);
+
+                if (selectedStart < minDate) {
+                    return Swal.fire('Advance Notice Required', 'This leave type must be requested at least 48 hours (2 days) in advance.', 'warning');
+                }
+            }
+
+            // 3. Medical Leave Confirmation
+            if (form.type === 'Medical') {
+                const confirm = await Swal.fire({
+                    title: 'Backup Coordinator',
+                    text: "Have you coordinated with your backup to cover your shift?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, I have'
+                });
+                if (!confirm.isConfirmed) return;
             }
             
             // File handling
@@ -878,7 +909,7 @@
             document.getElementById('e-name').value = '';
             document.getElementById('e-user').value = '';
             document.getElementById('e-pass').value = '';
-            document.getElementById('e-mail').value = '';
+            document.getElementById('e-email').value = '';
             document.getElementById('e-role').value = 'Employee';
             document.getElementById('e-bal').value = '20';
             new bootstrap.Modal(document.getElementById('empModal')).show();
@@ -889,7 +920,7 @@
                 name: document.getElementById('e-name').value.trim(),
                 username: document.getElementById('e-user').value.trim(),
                 password: document.getElementById('e-pass').value,
-                email: document.getElementById('e-mail').value.trim(),
+                email: document.getElementById('e-email').value.trim(),
                 role: document.getElementById('e-role').value,
                 balance: document.getElementById('e-bal').value
             };
@@ -1117,3 +1148,4 @@
     </script>
 </body>
 </html>
+   
