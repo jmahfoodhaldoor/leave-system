@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 🔴🔴🔴 هام: تأكد أن الرابط هو آخر رابط نشرته (New Version) 🔴🔴🔴
+        // 🔴🔴🔴 هام: تأكد أن هذا الرابط هو (New Version) من الـ Deploy 🔴🔴🔴
         const API_URL = "https://script.google.com/macros/s/AKfycbzqnlL3-wlQFop9WMwEgx1JT7DqD_Ss_56tI_86NF6J54d5I7X0qEFRPdzQDdkOScEHVg/exec";
     </script>
 
@@ -19,17 +19,11 @@
         :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f1f5f9; --sidebar-width: 260px; }
         body { background-color: var(--bg); font-family: 'Poppins', sans-serif; color: #334155; overflow-x: hidden; }
         .hidden { display: none !important; }
-        
-        /* Loader */
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .loading-text { margin-top: 15px; color: var(--primary); font-weight: 500; }
-        
-        /* Sidebar & Layout */
         .sidebar { width: var(--sidebar-width); height: 100vh; position: fixed; top: 0; left: 0; background: var(--primary); color: white; padding: 20px; transition: 0.3s; z-index: 1000; overflow-y: auto; }
         .main-content { margin-left: var(--sidebar-width); padding: 30px; min-height: 100vh; transition: 0.3s; }
         #mobile-menu-btn { display: none; position: fixed; top: 15px; right: 15px; z-index: 1001; background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-
-        /* Components */
         .nav-link { color: #94a3b8; padding: 12px 15px; margin: 5px 0; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
         .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; transform: translateX(5px); }
         .card-custom { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px; border: 1px solid #e2e8f0; }
@@ -38,19 +32,14 @@
         .bg-pending { background: #fef3c7; color: #92400e; }
         .bg-approved { background: #d1fae5; color: #065f46; }
         .bg-rejected { background: #fee2e2; color: #991b1b; }
-        
-        /* Calendar */
         .fc-daygrid-day { cursor: pointer; transition: 0.2s; }
         .fc-daygrid-day:hover { background-color: #f1f5f9; }
         .fc .fc-button-primary { background: var(--primary); border-color: var(--primary); }
         .day-blocked { background-color: #fee2e2 !important; color: #b91c1c !important; cursor: not-allowed !important; }
         .day-limited { background-color: #fef3c7 !important; }
         .day-past { background-color: #f8fafc !important; opacity: 0.6; cursor: not-allowed !important; }
-
-        /* Login */
         #view-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
         .login-box { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-
         @media (max-width: 768px) {
             .sidebar { left: -100%; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
             .sidebar.active { left: 0; }
@@ -63,21 +52,12 @@
 </head>
 <body>
 
-    <div id="loading-overlay" class="hidden">
-        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
-        <div class="loading-text">Loading...</div>
-    </div>
-
-    <button id="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars fa-lg"></i></button>
-    <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="loading-overlay" class="hidden"><div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div><div class="loading-text">Loading...</div></div>
+    <button id="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars fa-lg"></i></button><div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <div id="view-login">
         <div class="login-box">
-            <div class="text-center mb-4">
-                <i class="fas fa-cubes fa-3x text-primary mb-3"></i>
-                <h4 class="fw-bold">Depot Dispatcher</h4>
-                <p class="text-muted small">Dispatcher's Leave Portal</p>
-            </div>
+            <div class="text-center mb-4"><i class="fas fa-cubes fa-3x text-primary mb-3"></i><h4 class="fw-bold">Depot Dispatcher</h4><p class="text-muted small">Dispatcher's Leave Portal</p></div>
             <form onsubmit="event.preventDefault(); doLogin();">
                 <div class="mb-3"><label class="small fw-bold">Username</label><input type="text" id="login-user" class="form-control" required></div>
                 <div class="mb-4"><label class="small fw-bold">Password</label><input type="password" id="login-pass" class="form-control" required></div>
@@ -88,15 +68,8 @@
 
     <div id="view-app" class="hidden">
         <div class="sidebar" id="sidebar">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="fw-bold mb-0"><i class="fas fa-cubes me-2"></i> Depot Portal</h5>
-                <button class="btn btn-sm btn-outline-light d-md-none" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="mb-4 p-3 rounded bg-white bg-opacity-10">
-                <div class="fw-bold" id="u-name">User</div>
-                <small class="text-white-50" id="u-role">Role</small>
-                <div id="balance-badge" class="mt-2 hidden"><span class="badge bg-success"><i class="fas fa-calendar-check me-1"></i> <span id="u-balance">0</span> Days</span></div>
-            </div>
+            <div class="d-flex justify-content-between align-items-center mb-4"><h5 class="fw-bold mb-0"><i class="fas fa-cubes me-2"></i> Depot Portal</h5><button class="btn btn-sm btn-outline-light d-md-none" onclick="toggleSidebar()"><i class="fas fa-times"></i></button></div>
+            <div class="mb-4 p-3 rounded bg-white bg-opacity-10"><div class="fw-bold" id="u-name">User</div><small class="text-white-50" id="u-role">Role</small><div id="balance-badge" class="mt-2 hidden"><span class="badge bg-success"><i class="fas fa-calendar-check me-1"></i> <span id="u-balance">0</span> Days</span></div></div>
             <nav>
                 <div class="nav-link active" onclick="nav('home')"><i class="fas fa-home"></i> Dashboard</div>
                 <div id="menu-emp" class="hidden">
@@ -131,55 +104,30 @@
             <div id="page-new-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">New Request</h3>
                 <div class="row">
-                    <div class="col-md-8">
-                        <div class="card-custom">
-                            <div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> <strong>Legend:</strong> Red = Full | Yellow = Limited | White = Available</div>
-                            <div id="calendar"></div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card-custom bg-primary text-white">
-                            <h5 class="mb-3">Your Balance</h5>
-                            <h2 class="display-4 fw-bold mb-0" id="disp-balance">0</h2>
-                            <small>Days Available</small>
-                        </div>
-                    </div>
+                    <div class="col-md-8"><div class="card-custom"><div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> <strong>Legend:</strong> Red = Full | Yellow = Limited | White = Available</div><div id="calendar"></div></div></div>
+                    <div class="col-md-4"><div class="card-custom bg-primary text-white"><h5 class="mb-3">Your Balance</h5><h2 class="display-4 fw-bold mb-0" id="disp-balance">0</h2><small>Days Available</small></div></div>
                 </div>
             </div>
 
             <div id="page-my-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">My History</h3>
-                <div class="card-custom overflow-auto">
-                    <table class="table table-hover align-middle"><thead class="table-light"><tr><th>Date</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>Notes</th><th>File</th></tr></thead><tbody id="tb-my-req"></tbody></table>
-                </div>
+                <div class="card-custom"><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>Date</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>Notes</th><th>File</th></tr></thead><tbody id="tb-my-req"></tbody></table></div></div>
             </div>
 
             <div id="page-admin-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">Manage Requests</h3>
-                <div class="card-custom overflow-auto">
-                    <table class="table table-hover align-middle"><thead class="table-light"><tr><th>Employee</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>File</th><th>Action</th></tr></thead><tbody id="tb-admin-req"></tbody></table>
-                </div>
+                <div class="card-custom"><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>Employee</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>File</th><th>Action</th></tr></thead><tbody id="tb-admin-req"></tbody></table></div></div>
             </div>
 
             <div id="page-employees" class="page-section hidden">
                 <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold">Employees</h3><button onclick="openAddEmpModal()" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Add</button></div>
-                <div class="card-custom overflow-auto">
-                    <table class="table table-hover align-middle"><thead class="table-light"><tr><th>Name</th><th>ID</th><th>Role</th><th>Email</th><th>Balance</th><th>Action</th></tr></thead><tbody id="tb-employees"></tbody></table>
-                </div>
+                <div class="card-custom"><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>Name</th><th>ID</th><th>Role</th><th>Email</th><th>Balance</th><th>Action</th></tr></thead><tbody id="tb-employees"></tbody></table></div></div>
             </div>
 
             <div id="page-settings" class="page-section hidden">
                 <h3 class="fw-bold mb-4">Settings</h3>
                 <div class="row">
-                    <div class="col-md-5">
-                        <div class="card-custom">
-                            <h6 class="fw-bold mb-3">Add Seasonal Rule</h6>
-                            <input type="date" id="s-start" class="form-control mb-2">
-                            <input type="date" id="s-end" class="form-control mb-2">
-                            <input type="number" id="s-limit" class="form-control mb-3" placeholder="Limit" min="0">
-                            <button onclick="saveSeason()" class="btn btn-dark w-100">Add Rule</button>
-                        </div>
-                    </div>
+                    <div class="col-md-5"><div class="card-custom"><h6 class="fw-bold mb-3">Add Seasonal Rule</h6><input type="date" id="s-start" class="form-control mb-2"><input type="date" id="s-end" class="form-control mb-2"><input type="number" id="s-limit" class="form-control mb-3" placeholder="Limit" min="0"><button onclick="saveSeason()" class="btn btn-dark w-100">Add Rule</button></div></div>
                     <div class="col-md-7"><div class="card-custom"><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Start</th><th>End</th><th>Limit</th><th>Action</th></tr></thead><tbody id="tb-settings"></tbody></table></div></div></div>
                 </div>
             </div>
@@ -191,23 +139,10 @@
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold">Submit Leave Request</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="small fw-bold">Leave Type</label>
-                        <select id="m-type" class="form-select" onchange="updateModalUI()">
-                            <option value="Annual">Annual Leave</option>
-                            <option value="Medical">Medical Leave</option>
-                            <option value="Maternity">Maternity Leave</option>
-                            <option value="Paternity">Paternity Leave</option>
-                            <option value="Unpaid">Unpaid Leave</option>
-                        </select>
-                    </div>
+                    <div class="mb-3"><label class="small fw-bold">Type</label><select id="m-type" class="form-select" onchange="updateModalUI()"><option value="Annual">Annual Leave</option><option value="Medical">Medical Leave</option><option value="Maternity">Maternity Leave</option><option value="Paternity">Paternity Leave</option><option value="Unpaid">Unpaid Leave</option></select></div>
                     <div id="medical-warning" class="alert alert-warning small mb-3 hidden"><i class="fas fa-exclamation-triangle me-2"></i> Please coordinate with your <strong>backup</strong>.</div>
-                    
-                    <div class="row g-2 mb-3">
-                        <div class="col"><label class="small fw-bold" id="label-start">Start Date</label><input type="date" id="m-start" class="form-control" readonly></div>
-                        <div class="col"><label class="small fw-bold">End Date</label><input type="date" id="m-end" class="form-control" onchange="calcDays()"></div>
-                    </div>
-                    <div class="mb-3"><label class="small fw-bold">Attachment (Optional)</label><input type="file" id="m-file" class="form-control" accept="image/*,.pdf"><small class="text-muted">Max 5MB</small></div>
+                    <div class="row g-2 mb-3"><div class="col"><label class="small fw-bold" id="label-start">Start</label><input type="date" id="m-start" class="form-control" readonly></div><div class="col"><label class="small fw-bold">End</label><input type="date" id="m-end" class="form-control" onchange="calcDays()"></div></div>
+                    <div class="mb-3"><label class="small fw-bold">Attachment</label><input type="file" id="m-file" class="form-control" accept="image/*,.pdf"><small class="text-muted">Max 5MB</small></div>
                     <div class="mb-3"><label class="small fw-bold">Notes</label><textarea id="m-notes" class="form-control" rows="2"></textarea></div>
                     <div class="alert alert-secondary py-2 d-flex justify-content-between mb-0"><span>Days: <strong id="req-days">0</strong></span><span>Balance: <strong id="req-bal">0</strong></span></div>
                 </div>
@@ -239,7 +174,6 @@
             const u = document.getElementById('login-user').value.trim();
             const p = document.getElementById('login-pass').value.trim();
             if(!u || !p) return Swal.fire('Error', 'Required fields', 'error');
-            
             showLoading('Signing in...');
             try {
                 const res = await apiCall({ action: 'login', username: u, password: p });
@@ -357,13 +291,8 @@
             const type = document.getElementById('m-type').value;
             const warningBox = document.getElementById('medical-warning');
             const startLabel = document.getElementById('label-start');
-            
-            // Medical Warning
             if (type === 'Medical') warningBox.classList.remove('hidden'); else warningBox.classList.add('hidden');
-            
-            // Label Change
-            if (type === 'Maternity' || type === 'Paternity') startLabel.innerText = "Expected Start Date"; 
-            else startLabel.innerText = "Start Date";
+            if (type === 'Maternity' || type === 'Paternity') startLabel.innerText = "Expected Start"; else startLabel.innerText = "Start Date";
         }
 
         function calcDays() {
@@ -381,27 +310,22 @@
                 username: DATA.user.username, name: DATA.user.name,
                 start: document.getElementById('m-start').value, end: document.getElementById('m-end').value,
                 days: parseFloat(document.getElementById('req-days').textContent),
-                type: document.getElementById('m-type').value,
-                notes: document.getElementById('m-notes').value
+                type: document.getElementById('m-type').value, notes: document.getElementById('m-notes').value
             };
             const fileInput = document.getElementById('m-file');
             
             if (new Date(form.end) < new Date(form.start)) return Swal.fire('Error', 'Invalid dates', 'error');
 
-            // 48-Hour Rule Logic
-            const restricted = ['Annual', 'Unpaid', 'Maternity', 'Paternity'];
-            if (restricted.includes(form.type)) {
+            // 48-Hour Rule
+            if (['Annual', 'Unpaid', 'Maternity', 'Paternity'].includes(form.type)) {
                 const today = new Date(); today.setHours(0,0,0,0);
-                const minDate = new Date(today); minDate.setDate(today.getDate() + 2); // 48 Hours
-                const startDate = new Date(form.start); startDate.setHours(0,0,0,0);
-                
-                if (startDate < minDate) {
-                    return Swal.fire('Advance Notice Required', 'This leave must be requested at least 48 hours (2 days) in advance.', 'warning');
-                }
+                const minDate = new Date(today); minDate.setDate(today.getDate() + 2);
+                const selDate = new Date(form.start); selDate.setHours(0,0,0,0);
+                if (selDate < minDate) return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
             }
 
             if (form.type === 'Medical') {
-                if(!(await Swal.fire({ title: 'Backup?', text: 'Did you coordinate with your backup?', icon:'question', showCancelButton:true, confirmButtonText:'Yes' })).isConfirmed) return;
+                if(!(await Swal.fire({ title: 'Backup?', text: 'Coordinate with backup?', icon:'question', showCancelButton:true, confirmButtonText:'Yes' })).isConfirmed) return;
             }
 
             let fileData = null;
@@ -428,6 +352,7 @@
             hideLoading();
         }
 
+        // 🔴🔴🔴 THE "LIVE" FIX (Updates Tables Immediately) 🔴🔴🔴
         async function refreshData() {
             try {
                 const res = await apiCall({ action: 'login', username: DATA.user.username, password: CURRENT_PASSWORD });
@@ -435,37 +360,73 @@
                     DATA = res;
                     DATA.settings = DATA.settings || []; DATA.approvedRequests = DATA.approvedRequests || []; DATA.teamLeaves = DATA.teamLeaves || [];
                     
+                    // 1. Refresh Dashboard numbers
+                    renderDashboard();
+                    
+                    // 2. Refresh Admin Views (if admin)
                     if (DATA.user.role === 'Admin') {
-                        renderDashboard();
                         const pending = (DATA.allRequests||[]).filter(r=>r.status==='Pending').length;
-                        document.getElementById('badge-pending').textContent=pending;
+                        document.getElementById('badge-pending').textContent = pending;
                         pending > 0 ? document.getElementById('badge-pending').classList.remove('hidden') : document.getElementById('badge-pending').classList.add('hidden');
+                        
+                        // Force refresh tables if they are visible
                         if (!document.getElementById('page-admin-req').classList.contains('hidden')) renderAdminRequests();
+                        if (!document.getElementById('page-employees').classList.contains('hidden')) loadEmployees();
+                        if (!document.getElementById('page-settings').classList.contains('hidden')) renderSettings();
                     } else {
+                        // 3. Refresh Employee Views
                         document.getElementById('u-balance').textContent = DATA.user.balance;
                         document.getElementById('disp-balance').textContent = DATA.user.balance;
-                        renderDashboard();
                         if (!document.getElementById('page-my-req').classList.contains('hidden')) renderMyRequests();
                     }
+                    
+                    // 4. Refresh Calendar
                     if (calendarObj) { calendarObj.refetchEvents(); calendarObj.render(); }
                 }
             } catch (e) { console.error('Refresh failed:', e); }
         }
 
-        // --- Other functions ---
+        // --- View Functions ---
         function renderMyRequests() { document.getElementById('tb-my-req').innerHTML = (DATA.myRequests||[]).map(r => `<tr><td>${r.timestamp||'-'}</td><td><span class="badge bg-secondary">${r.type}</span></td><td>${r.start} -> ${r.end}</td><td><strong>${r.days}</strong></td><td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td><td>${r.notes||'-'}</td><td>${r.attachment?`<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file"></i></a>`:'-'}</td></tr>`).join(''); }
         function renderAdminRequests() { document.getElementById('tb-admin-req').innerHTML = (DATA.allRequests||[]).map(r => `<tr><td><strong>${r.name}</strong><br><small>${r.username}</small></td><td>${r.type}</td><td>${r.start}<br><small>${r.end}</small></td><td><strong>${r.days}</strong></td><td>${r.status}</td><td>${r.attachment?`<a href="${r.attachment}" target="_blank">View</a>`:''}</td><td>${r.status==='Pending'?`<button onclick="adminAct('${r.id}','Approved')" class="btn btn-sm btn-success">✔</button> <button onclick="adminAct('${r.id}','Rejected')" class="btn btn-sm btn-danger">✘</button>`:''}</td></tr>`).join(''); }
         async function adminAct(id, act) { if(!(await Swal.fire({title:act+'?',icon:'question',showCancelButton:true})).isConfirmed) return; showLoading(); await apiCall({action:'adminAction',id,act,notes:''}); await refreshData(); hideLoading(); }
+        
         async function loadEmployees() { try { const res = await apiCall({action:'getAllEmployees'}); if(res.success) document.getElementById('tb-employees').innerHTML = res.employees.map(e => `<tr><td>${e.name}</td><td>${e.username}</td><td>${e.role}</td><td>${e.email}</td><td>${e.balance}</td><td><button onclick="openBalModal('${e.username}',${e.balance})" class="btn btn-sm btn-outline-warning">Edit</button></td></tr>`).join(''); } catch(e){} }
+        
         function openAddEmpModal() { document.getElementById('e-name').value=''; new bootstrap.Modal(document.getElementById('empModal')).show(); }
-        async function addEmployee() { const emp={name:document.getElementById('e-name').value, username:document.getElementById('e-user').value, password:document.getElementById('e-pass').value, email:document.getElementById('e-email').value, role:document.getElementById('e-role').value, balance:document.getElementById('e-bal').value}; showLoading(); await apiCall({action:'addEmployee', employee:emp}); await loadEmployees(); hideLoading(); bootstrap.Modal.getInstance(document.getElementById('empModal')).hide(); }
+        async function addEmployee() { 
+            const emp={name:document.getElementById('e-name').value, username:document.getElementById('e-user').value, password:document.getElementById('e-pass').value, email:document.getElementById('e-email').value, role:document.getElementById('e-role').value, balance:document.getElementById('e-bal').value}; 
+            showLoading('Saving...'); bootstrap.Modal.getInstance(document.getElementById('empModal')).hide();
+            await apiCall({action:'addEmployee', employee:emp}); 
+            await refreshData(); // Force refresh to update list
+            hideLoading(); 
+        }
+        
         function openBalModal(u,b) { document.getElementById('eb-user').value=u; document.getElementById('eb-val').value=b; new bootstrap.Modal(document.getElementById('balModal')).show(); }
-        async function saveBalance() { showLoading(); await apiCall({action:'updateBalance', username:document.getElementById('eb-user').value, balance:document.getElementById('eb-val').value}); await loadEmployees(); hideLoading(); bootstrap.Modal.getInstance(document.getElementById('balModal')).hide(); }
+        async function saveBalance() { 
+            showLoading(); bootstrap.Modal.getInstance(document.getElementById('balModal')).hide();
+            await apiCall({action:'updateBalance', username:document.getElementById('eb-user').value, balance:document.getElementById('eb-val').value}); 
+            await refreshData(); // Force refresh
+            hideLoading(); 
+        }
+        
         function openChangePassword() { document.getElementById('old-pass').value=''; new bootstrap.Modal(document.getElementById('passModal')).show(); }
         async function changePassword() { const o=document.getElementById('old-pass').value, n=document.getElementById('new-pass').value; showLoading(); const res = await apiCall({action:'changePassword', username:DATA.user.username, oldPass:o, newPass:n}); Swal.fire(res.success?'Success':'Error', res.message, res.success?'success':'error'); hideLoading(); bootstrap.Modal.getInstance(document.getElementById('passModal')).hide(); }
+        
         function renderSettings() { document.getElementById('tb-settings').innerHTML = (DATA.settings||[]).filter(x=>x.type==='Season').map((x,i) => `<tr><td>${x.start}</td><td>${x.end}</td><td>${x.limit}</td><td><button onclick="delSet(${i})" class="btn btn-sm btn-danger">X</button></td></tr>`).join(''); }
-        async function saveSeason() { showLoading(); await apiCall({ action:'saveSeason', start:document.getElementById('s-start').value, end:document.getElementById('s-end').value, limit:document.getElementById('s-limit').value}); await refreshData(); hideLoading(); }
-        async function delSet(i) { if(confirm('Delete?')) { showLoading(); await apiCall({action:'deleteSetting', index:i}); await refreshData(); hideLoading(); } }
+        async function saveSeason() { 
+            showLoading('Saving...'); 
+            await apiCall({ action:'saveSeason', start:document.getElementById('s-start').value, end:document.getElementById('s-end').value, limit:document.getElementById('s-limit').value}); 
+            await refreshData(); // Force refresh to update table
+            hideLoading(); 
+        }
+        async function delSet(i) { 
+            if(confirm('Delete?')) { 
+                showLoading(); await apiCall({action:'deleteSetting', index:i}); 
+                await refreshData(); // Force refresh
+                hideLoading(); 
+            } 
+        }
     </script>
 </body>
 </html>
