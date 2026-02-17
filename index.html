@@ -11,8 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 🔴🔴🔴 الرابط الخاص بك 🔴🔴🔴
-        const API_URL = "https://script.google.com/macros/s/AKfycbzqnlL3-wlQFop9WMwEgx1JT7DqD_Ss_56tI_86NF6J54d5I7X0qEFRPdzQDdkOScEHVg/exec";
+        // 🔴🔴🔴 ضع الرابط الجديد هنا 🔴🔴🔴
+        const API_URL = "hhttps://script.google.com/macros/s/AKfycbzqnlL3-wlQFop9WMwEgx1JT7DqD_Ss_56tI_86NF6J54d5I7X0qEFRPdzQDdkOScEHVg/exec";
     </script>
 
     <style>
@@ -20,28 +20,21 @@
         body { background-color: var(--bg); font-family: 'Poppins', sans-serif; color: #334155; overflow-x: hidden; }
         .hidden { display: none !important; }
         
+        /* 🔴 FORCE MODALS ON TOP (FIX FOR UNCLICKABLE BUTTONS) 🔴 */
+        .modal { z-index: 100000 !important; }
+        .modal-backdrop { z-index: 99999 !important; }
+        .swal2-container { z-index: 100001 !important; }
+
         /* Loader */
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 200000; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .loading-text { margin-top: 15px; color: var(--primary); font-weight: 500; }
         
         /* Sidebar */
         .sidebar { width: var(--sidebar-width); height: 100vh; position: fixed; top: 0; left: 0; background: var(--primary); color: white; padding: 20px; transition: 0.3s; z-index: 1000; overflow-y: auto; }
         .main-content { margin-left: var(--sidebar-width); padding: 30px; min-height: 100vh; transition: 0.3s; }
         
-        /* Mobile Toggle Button (Fixed Position) */
-        #mobile-menu-btn { 
-            display: none; 
-            position: fixed; 
-            top: 10px; 
-            right: 10px; 
-            z-index: 1050; /* Higher than content, lower than modal */
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 8px 12px; 
-            border-radius: 6px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-        }
+        /* Mobile Button */
+        #mobile-menu-btn { display: none; position: fixed; top: 15px; right: 15px; z-index: 2000; background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
         /* Components */
         .nav-link { color: #94a3b8; padding: 12px 15px; margin: 5px 0; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
@@ -65,16 +58,12 @@
         #view-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
         .login-box { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
 
-        /* Modal Fixes (Ensure on top) */
-        .modal { z-index: 1060; }
-        .modal-backdrop { z-index: 1055; }
-
         @media (max-width: 768px) {
-            .sidebar { left: -100%; box-shadow: 5px 0 15px rgba(0,0,0,0.2); z-index: 1070; }
+            .sidebar { left: -100%; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
             .sidebar.active { left: 0; }
-            .main-content { margin-left: 0; padding: 20px; padding-top: 60px; /* Space for menu button */ }
+            .main-content { margin-left: 0; padding: 20px; padding-top: 70px; }
             #mobile-menu-btn { display: block; }
-            #sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1065; }
+            #sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
             #sidebar-overlay.active { display: block; }
         }
     </style>
@@ -181,9 +170,9 @@
             </div>
 
             <div id="page-employees" class="page-section hidden">
-                <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 10px;">
+                <div class="d-flex justify-content-between align-items-center mb-4">
                     <h3 class="fw-bold">Employees</h3>
-                    <button onclick="openAddEmpModal()" class="btn btn-primary" style="z-index: 1;">
+                    <button onclick="openAddEmpModal()" class="btn btn-primary">
                         <i class="fas fa-plus me-2"></i> Add Employee
                     </button>
                 </div>
@@ -243,7 +232,7 @@
                     <input type="number" id="e-bal" class="form-control mb-2" placeholder="Balance" value="20">
                 </div>
                 <div class="modal-footer border-0">
-                    <button onclick="addEmployee()" class="btn btn-primary">Save</button>
+                    <button type="button" onclick="addEmployee()" class="btn btn-primary w-100">Save</button>
                 </div>
             </div>
         </div>
@@ -315,10 +304,8 @@
             document.getElementById('page-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             if(event && event.target.closest('.nav-link')) event.target.closest('.nav-link').classList.add('active');
-            
             document.querySelector('.sidebar').classList.remove('active');
             document.getElementById('sidebar-overlay').classList.remove('active');
-
             if(id === 'new-req' && calendarObj) setTimeout(() => calendarObj.updateSize(), 200);
             if(id === 'my-req') renderMyRequests();
             if(id === 'admin-req') renderAdminRequests();
@@ -332,7 +319,6 @@
             document.getElementById('st-pending').textContent = all.filter(r=>r.status==='Pending').length;
             document.getElementById('st-approved').textContent = all.filter(r=>r.status==='Approved').length;
             document.getElementById('st-rejected').textContent = all.filter(r=>r.status==='Rejected').length;
-
             const today = new Date().toISOString().split('T')[0];
             const out = (DATA.teamLeaves||[]).filter(l => today >= l.start && today <= l.end);
             const container = document.getElementById('team-view-container');
@@ -363,12 +349,6 @@
                 }
             });
             calendarObj.render();
-        }
-
-        // 🔴 FIX: Date format helper to prevent day shifting
-        function toISODate(dateStr) {
-            if(!dateStr) return "";
-            return new Date(dateStr).toISOString().split('T')[0];
         }
 
         function getDailyLimit(d) {
@@ -447,42 +427,36 @@
             bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide();
             try {
                 const res = await apiCall({ action: 'submitRequest', form: form, fileData: fileData });
-                if (res.success) { Swal.fire('Success', 'Request Sent', 'success'); await refreshData(); } 
-                else Swal.fire('Error', res.message, 'error');
+                if (res.success) { 
+                    Swal.fire('Success', 'Request Sent', 'success').then(() => location.reload()); // Reload to be safe
+                } else Swal.fire('Error', res.message, 'error');
             } catch (e) { Swal.fire('Error', 'Failed', 'error'); }
             hideLoading();
         }
 
-        async function refreshData() {
-            try {
-                const res = await apiCall({ action: 'login', username: DATA.user.username, password: CURRENT_PASSWORD });
-                if (res.success) {
-                    DATA = res;
-                    DATA.settings = DATA.settings || []; DATA.approvedRequests = DATA.approvedRequests || []; DATA.teamLeaves = DATA.teamLeaves || [];
-                    
-                    if (DATA.user.role === 'Admin') {
-                        renderDashboard();
-                        const pending = (DATA.allRequests||[]).filter(r=>r.status==='Pending').length;
-                        document.getElementById('badge-pending').textContent = pending;
-                        pending > 0 ? document.getElementById('badge-pending').classList.remove('hidden') : document.getElementById('badge-pending').classList.add('hidden');
-                        
-                        if (!document.getElementById('page-admin-req').classList.contains('hidden')) renderAdminRequests();
-                        if (!document.getElementById('page-employees').classList.contains('hidden')) loadEmployees();
-                        if (!document.getElementById('page-settings').classList.contains('hidden')) renderSettings();
-                    } else {
-                        document.getElementById('u-balance').textContent = DATA.user.balance;
-                        document.getElementById('disp-balance').textContent = DATA.user.balance;
-                        if (!document.getElementById('page-my-req').classList.contains('hidden')) renderMyRequests();
-                    }
-                    if (calendarObj) { calendarObj.refetchEvents(); calendarObj.render(); }
-                }
-            } catch (e) { console.error('Refresh failed:', e); }
+        // 🔴🔴🔴 FIXED DATE RENDERING 🔴🔴🔴
+        function fixDate(d) {
+            // Simply return what backend sent, no formatting
+            return d ? d : "";
         }
 
-        // --- View Functions ---
-        function renderMyRequests() { document.getElementById('tb-my-req').innerHTML = (DATA.myRequests||[]).map(r => `<tr><td>${r.timestamp||'-'}</td><td><span class="badge bg-secondary">${r.type}</span></td><td>${r.start} -> ${r.end}</td><td><strong>${r.days}</strong></td><td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td><td>${r.notes||'-'}</td><td>${r.attachment?`<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file"></i></a>`:'-'}</td></tr>`).join(''); }
-        function renderAdminRequests() { document.getElementById('tb-admin-req').innerHTML = (DATA.allRequests||[]).map(r => `<tr><td><strong>${r.name}</strong><br><small>${r.username}</small></td><td>${r.type}</td><td>${r.start}<br><small>${r.end}</small></td><td><strong>${r.days}</strong></td><td>${r.status}</td><td>${r.attachment?`<a href="${r.attachment}" target="_blank">View</a>`:''}</td><td>${r.status==='Pending'?`<button onclick="adminAct('${r.id}','Approved')" class="btn btn-sm btn-success">✔</button> <button onclick="adminAct('${r.id}','Rejected')" class="btn btn-sm btn-danger">✘</button>`:''}</td></tr>`).join(''); }
-        async function adminAct(id, act) { if(!(await Swal.fire({title:act+'?',icon:'question',showCancelButton:true})).isConfirmed) return; showLoading('Processing...'); await apiCall({action:'adminAction',id,act,notes:''}); await refreshData(); hideLoading(); }
+        function renderMyRequests() { 
+            document.getElementById('tb-my-req').innerHTML = (DATA.myRequests||[]).map(r => 
+                `<tr><td>${fixDate(r.timestamp)}</td><td><span class="badge bg-secondary">${r.type}</span></td><td>${fixDate(r.start)} -> ${fixDate(r.end)}</td><td><strong>${r.days}</strong></td><td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td><td>${r.notes||'-'}</td><td>${r.attachment?`<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file"></i></a>`:'-'}</td></tr>`).join(''); 
+        }
+        
+        function renderAdminRequests() { 
+            document.getElementById('tb-admin-req').innerHTML = (DATA.allRequests||[]).map(r => 
+                `<tr><td><strong>${r.name}</strong><br><small>${r.username}</small></td><td>${r.type}</td><td>${fixDate(r.start)}<br><small>${fixDate(r.end)}</small></td><td><strong>${r.days}</strong></td><td>${r.status}</td><td>${r.attachment?`<a href="${r.attachment}" target="_blank">View</a>`:''}</td><td>${r.status==='Pending'?`<button onclick="adminAct('${r.id}','Approved')" class="btn btn-sm btn-success">✔</button> <button onclick="adminAct('${r.id}','Rejected')" class="btn btn-sm btn-danger">✘</button>`:''}</td></tr>`).join(''); 
+        }
+        
+        async function adminAct(id, act) { 
+            if(!(await Swal.fire({title:act+'?',icon:'question',showCancelButton:true})).isConfirmed) return; 
+            showLoading('Processing...'); 
+            await apiCall({action:'adminAction',id,act,notes:''}); 
+            // Reload to refresh everything perfectly
+            location.reload(); 
+        }
         
         async function loadEmployees() { try { const res = await apiCall({action:'getAllEmployees'}); if(res.success) document.getElementById('tb-employees').innerHTML = res.employees.map(e => `<tr><td>${e.name}</td><td>${e.username}</td><td>${e.role}</td><td>${e.email}</td><td>${e.balance}</td><td><button onclick="openBalModal('${e.username}',${e.balance})" class="btn btn-sm btn-outline-warning">Edit</button></td></tr>`).join(''); } catch(e){} }
         
@@ -495,7 +469,7 @@
             empModalObj.show(); 
         }
         
-        // 🔴 FIX: Cleaned up Add Employee function
+        // 🔴 FIX: Robust Add Employee
         async function addEmployee() { 
             const emp={
                 name:document.getElementById('e-name').value, 
@@ -506,41 +480,35 @@
                 balance:document.getElementById('e-bal').value
             }; 
             
-            if(!emp.name || !emp.username || !emp.password) return Swal.fire('Error','Missing required fields','error');
-            
+            if(!emp.name || !emp.username || !emp.password) return Swal.fire('Error','Missing fields','error');
             showLoading('Saving...'); 
-            if(empModalObj) empModalObj.hide();
-
+            
             try {
                 const res = await apiCall({action:'addEmployee', employee:emp}); 
                 if(res.success) { 
-                    Swal.fire('Success','Employee Added','success'); 
-                    // Clear inputs on success
-                    document.getElementById('e-name').value=''; 
-                    document.getElementById('e-user').value=''; 
-                    document.getElementById('e-pass').value='';
-                    document.getElementById('e-email').value='';
-                    await refreshData(); 
+                    Swal.fire('Success','Employee Added','success').then(() => location.reload()); // RELOAD TO FIX EVERYTHING
                 } else { 
                     Swal.fire('Error', res.message, 'error'); 
-                    if(empModalObj) empModalObj.show();
+                    hideLoading(); // Only hide loading if error, keep modal open
                 }
             } catch(e) { 
-                Swal.fire('Error','Failed to add','error'); 
-                if(empModalObj) empModalObj.show();
+                Swal.fire('Error','Failed','error'); 
+                hideLoading();
             }
-            hideLoading(); 
         }
         
         function openBalModal(u,b) { document.getElementById('eb-user').value=u; document.getElementById('eb-val').value=b; new bootstrap.Modal(document.getElementById('balModal')).show(); }
-        async function saveBalance() { showLoading(); bootstrap.Modal.getInstance(document.getElementById('balModal')).hide(); await apiCall({action:'updateBalance', username:document.getElementById('eb-user').value, balance:document.getElementById('eb-val').value}); await refreshData(); hideLoading(); }
+        async function saveBalance() { showLoading(); await apiCall({action:'updateBalance', username:document.getElementById('eb-user').value, balance:document.getElementById('eb-val').value}); location.reload(); }
         
         function openChangePassword() { document.getElementById('old-pass').value=''; new bootstrap.Modal(document.getElementById('passModal')).show(); }
-        async function changePassword() { const o=document.getElementById('old-pass').value, n=document.getElementById('new-pass').value; showLoading('Changing...'); bootstrap.Modal.getInstance(document.getElementById('passModal')).hide(); const res = await apiCall({action:'changePassword', username:DATA.user.username, oldPass:o, newPass:n}); Swal.fire(res.success?'Success':'Error', res.message, res.success?'success':'error'); hideLoading(); }
+        async function changePassword() { const o=document.getElementById('old-pass').value, n=document.getElementById('new-pass').value; showLoading('Changing...'); const res = await apiCall({action:'changePassword', username:DATA.user.username, oldPass:o, newPass:n}); Swal.fire(res.success?'Success':'Error', res.message, res.success?'success':'error'); if(res.success) hideLoading(); else hideLoading(); }
         
-        function renderSettings() { document.getElementById('tb-settings').innerHTML = (DATA.settings||[]).filter(x=>x.type==='Season').map((x,i) => `<tr><td>${x.start}</td><td>${x.end}</td><td>${x.limit}</td><td><button onclick="delSet(${i})" class="btn btn-sm btn-danger">X</button></td></tr>`).join(''); }
+        // 🔴 FIX: Settings Date Display (Using fixDate) & Clearing
+        function renderSettings() { 
+            document.getElementById('tb-settings').innerHTML = (DATA.settings||[]).filter(x=>x.type==='Season').map((x,i) => 
+                `<tr><td>${fixDate(x.start)}</td><td>${fixDate(x.end)}</td><td>${x.limit}</td><td><button onclick="delSet(${i})" class="btn btn-sm btn-danger">X</button></td></tr>`).join(''); 
+        }
         
-        // 🔴 FIX: Settings Date & Clearing
         async function saveSeason() { 
             const start = document.getElementById('s-start').value;
             const end = document.getElementById('s-end').value;
@@ -549,20 +517,16 @@
             if(!start || !end || limit === "") return Swal.fire('Error', 'Missing fields', 'error');
 
             showLoading('Saving...'); 
-            
-            // Use inputs directly, backend should handle string to avoid timezone shift if possible, 
-            // but for safety we send as is.
             await apiCall({ action:'saveSeason', start:start, end:end, limit:limit}); 
             
-            // 🔴 FIX: Clear inputs
+            // Clear and Reload
             document.getElementById('s-start').value = "";
             document.getElementById('s-end').value = "";
             document.getElementById('s-limit').value = "";
             
-            await refreshData(); 
-            hideLoading(); 
+            location.reload(); 
         }
-        async function delSet(i) { if(confirm('Delete?')) { showLoading('Deleting...'); await apiCall({action:'deleteSetting', index:i}); await refreshData(); hideLoading(); } }
+        async function delSet(i) { if(confirm('Delete?')) { showLoading('Deleting...'); await apiCall({action:'deleteSetting', index:i}); location.reload(); } }
     </script>
 </body>
 </html>
