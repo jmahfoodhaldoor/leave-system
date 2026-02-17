@@ -174,7 +174,7 @@
             const u = document.getElementById('login-user').value.trim();
             const p = document.getElementById('login-pass').value.trim();
             if(!u || !p) return Swal.fire('Error', 'Required fields', 'error');
-            showLoading('Signing in...');
+            showLoading('Loading...');
             try {
                 const res = await apiCall({ action: 'login', username: u, password: p });
                 if (res.success) { 
