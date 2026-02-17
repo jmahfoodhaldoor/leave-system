@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 🔴🔴🔴 ضع الرابط الجديد هنا 🔴🔴🔴
+        // 🔴🔴🔴 الرابط الخاص بك 🔴🔴🔴
         const API_URL = "https://script.google.com/macros/s/AKfycbzqnlL3-wlQFop9WMwEgx1JT7DqD_Ss_56tI_86NF6J54d5I7X0qEFRPdzQDdkOScEHVg/exec";
     </script>
 
@@ -19,11 +19,31 @@
         :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f1f5f9; --sidebar-width: 260px; }
         body { background-color: var(--bg); font-family: 'Poppins', sans-serif; color: #334155; overflow-x: hidden; }
         .hidden { display: none !important; }
+        
+        /* Loader */
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .loading-text { margin-top: 15px; color: var(--primary); font-weight: 500; }
+        
+        /* Sidebar */
         .sidebar { width: var(--sidebar-width); height: 100vh; position: fixed; top: 0; left: 0; background: var(--primary); color: white; padding: 20px; transition: 0.3s; z-index: 1000; overflow-y: auto; }
         .main-content { margin-left: var(--sidebar-width); padding: 30px; min-height: 100vh; transition: 0.3s; }
-        #mobile-menu-btn { display: none; position: fixed; top: 15px; right: 15px; z-index: 1001; background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        /* Mobile Toggle Button (Fixed Position) */
+        #mobile-menu-btn { 
+            display: none; 
+            position: fixed; 
+            top: 10px; 
+            right: 10px; 
+            z-index: 1050; /* Higher than content, lower than modal */
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 8px 12px; 
+            border-radius: 6px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
+
+        /* Components */
         .nav-link { color: #94a3b8; padding: 12px 15px; margin: 5px 0; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s; }
         .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; transform: translateX(5px); }
         .card-custom { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px; border: 1px solid #e2e8f0; }
@@ -32,32 +52,52 @@
         .bg-pending { background: #fef3c7; color: #92400e; }
         .bg-approved { background: #d1fae5; color: #065f46; }
         .bg-rejected { background: #fee2e2; color: #991b1b; }
+        
+        /* Calendar Fixes */
         .fc-daygrid-day { cursor: pointer; transition: 0.2s; }
         .fc-daygrid-day:hover { background-color: #f1f5f9; }
         .fc .fc-button-primary { background: var(--primary); border-color: var(--primary); }
         .day-blocked { background-color: #fee2e2 !important; color: #b91c1c !important; cursor: not-allowed !important; }
         .day-limited { background-color: #fef3c7 !important; }
         .day-past { background-color: #f8fafc !important; opacity: 0.6; cursor: not-allowed !important; }
+
+        /* Login */
         #view-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
         .login-box { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+
+        /* Modal Fixes (Ensure on top) */
+        .modal { z-index: 1060; }
+        .modal-backdrop { z-index: 1055; }
+
         @media (max-width: 768px) {
-            .sidebar { left: -100%; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
+            .sidebar { left: -100%; box-shadow: 5px 0 15px rgba(0,0,0,0.2); z-index: 1070; }
             .sidebar.active { left: 0; }
-            .main-content { margin-left: 0; padding: 20px; padding-top: 70px; }
+            .main-content { margin-left: 0; padding: 20px; padding-top: 60px; /* Space for menu button */ }
             #mobile-menu-btn { display: block; }
-            #sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+            #sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1065; }
             #sidebar-overlay.active { display: block; }
         }
     </style>
 </head>
 <body>
 
-    <div id="loading-overlay" class="hidden"><div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div><div class="loading-text">Loading...</div></div>
-    <button id="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars fa-lg"></i></button><div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
+    <button id="mobile-menu-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <div id="view-login">
         <div class="login-box">
-            <div class="text-center mb-4"><i class="fas fa-cubes fa-3x text-primary mb-3"></i><h4 class="fw-bold">Depot Dispatcher</h4><p class="text-muted small">Dispatcher's Leave Portal</p></div>
+            <div class="text-center mb-4">
+                <i class="fas fa-cubes fa-3x text-primary mb-3"></i>
+                <h4 class="fw-bold">Depot Dispatcher</h4>
+                <p class="text-muted small">Dispatcher's Leave Portal</p>
+            </div>
             <form onsubmit="event.preventDefault(); doLogin();">
                 <div class="mb-3"><label class="small fw-bold">Username</label><input type="text" id="login-user" class="form-control" required></div>
                 <div class="mb-4"><label class="small fw-bold">Password</label><input type="password" id="login-pass" class="form-control" required></div>
@@ -68,8 +108,17 @@
 
     <div id="view-app" class="hidden">
         <div class="sidebar" id="sidebar">
-            <div class="d-flex justify-content-between align-items-center mb-4"><h5 class="fw-bold mb-0"><i class="fas fa-cubes me-2"></i> Depot Portal</h5><button class="btn btn-sm btn-outline-light d-md-none" onclick="toggleSidebar()"><i class="fas fa-times"></i></button></div>
-            <div class="mb-4 p-3 rounded bg-white bg-opacity-10"><div class="fw-bold" id="u-name">User</div><small class="text-white-50" id="u-role">Role</small><div id="balance-badge" class="mt-2 hidden"><span class="badge bg-success"><i class="fas fa-calendar-check me-1"></i> <span id="u-balance">0</span> Days</span></div></div>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-cubes me-2"></i> Depot Portal</h5>
+                <button class="btn btn-sm btn-outline-light d-md-none" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="mb-4 p-3 rounded bg-white bg-opacity-10">
+                <div class="fw-bold" id="u-name">User</div>
+                <small class="text-white-50" id="u-role">Role</small>
+                <div id="balance-badge" class="mt-2 hidden">
+                    <span class="badge bg-success"><i class="fas fa-calendar-check me-1"></i> <span id="u-balance">0</span> Days</span>
+                </div>
+            </div>
             <nav>
                 <div class="nav-link active" onclick="nav('home')"><i class="fas fa-home"></i> Dashboard</div>
                 <div id="menu-emp" class="hidden">
@@ -87,6 +136,7 @@
         </div>
 
         <div class="main-content">
+            
             <div id="page-home" class="page-section">
                 <h3 class="fw-bold mb-4">Dashboard</h3>
                 <div id="admin-stats" class="row g-4 mb-4 hidden">
@@ -104,8 +154,19 @@
             <div id="page-new-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">New Request</h3>
                 <div class="row">
-                    <div class="col-md-8"><div class="card-custom"><div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> <strong>Legend:</strong> Red = Full | Yellow = Limited | White = Available</div><div id="calendar"></div></div></div>
-                    <div class="col-md-4"><div class="card-custom bg-primary text-white"><h5 class="mb-3">Your Balance</h5><h2 class="display-4 fw-bold mb-0" id="disp-balance">0</h2><small>Days Available</small></div></div>
+                    <div class="col-md-8">
+                        <div class="card-custom">
+                            <div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> <strong>Legend:</strong> Red = Full | Yellow = Limited | White = Available</div>
+                            <div id="calendar"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-custom bg-primary text-white">
+                            <h5 class="mb-3">Your Balance</h5>
+                            <h2 class="display-4 fw-bold mb-0" id="disp-balance">0</h2>
+                            <small>Days Available</small>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -120,15 +181,33 @@
             </div>
 
             <div id="page-employees" class="page-section hidden">
-                <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold">Employees</h3><button onclick="openAddEmpModal()" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Add</button></div>
+                <div class="d-flex justify-content-between align-items-center mb-4" style="margin-top: 10px;">
+                    <h3 class="fw-bold">Employees</h3>
+                    <button onclick="openAddEmpModal()" class="btn btn-primary" style="z-index: 1;">
+                        <i class="fas fa-plus me-2"></i> Add Employee
+                    </button>
+                </div>
                 <div class="card-custom"><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>Name</th><th>ID</th><th>Role</th><th>Email</th><th>Balance</th><th>Action</th></tr></thead><tbody id="tb-employees"></tbody></table></div></div>
             </div>
 
             <div id="page-settings" class="page-section hidden">
                 <h3 class="fw-bold mb-4">Settings</h3>
                 <div class="row">
-                    <div class="col-md-5"><div class="card-custom"><h6 class="fw-bold mb-3">Add Seasonal Rule</h6><input type="date" id="s-start" class="form-control mb-2"><input type="date" id="s-end" class="form-control mb-2"><input type="number" id="s-limit" class="form-control mb-3" placeholder="Limit" min="0"><button onclick="saveSeason()" class="btn btn-dark w-100">Add Rule</button></div></div>
-                    <div class="col-md-7"><div class="card-custom"><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Start</th><th>End</th><th>Limit</th><th>Action</th></tr></thead><tbody id="tb-settings"></tbody></table></div></div></div>
+                    <div class="col-md-5">
+                        <div class="card-custom">
+                            <h6 class="fw-bold mb-3">Add Seasonal Rule</h6>
+                            <input type="date" id="s-start" class="form-control mb-2">
+                            <input type="date" id="s-end" class="form-control mb-2">
+                            <input type="number" id="s-limit" class="form-control mb-3" placeholder="Limit" min="0">
+                            <button onclick="saveSeason()" class="btn btn-dark w-100">Add Rule</button>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card-custom">
+                            <h6 class="fw-bold mb-3">Active Rules</h6>
+                            <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Start</th><th>End</th><th>Limit</th><th>Action</th></tr></thead><tbody id="tb-settings"></tbody></table></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -151,7 +230,25 @@
         </div>
     </div>
 
-    <div class="modal fade" id="empModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Add Employee</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="e-name" class="form-control mb-2" placeholder="Full Name"><input type="text" id="e-user" class="form-control mb-2" placeholder="Username (ID)"><input type="password" id="e-pass" class="form-control mb-2" placeholder="Password"><input type="email" id="e-mail" class="form-control mb-2" placeholder="Email"><select id="e-role" class="form-select mb-2"><option value="Employee">Employee</option><option value="Admin">Admin</option></select><input type="number" id="e-bal" class="form-control mb-2" placeholder="Balance" value="20"></div><div class="modal-footer border-0"><button onclick="addEmployee()" class="btn btn-primary">Save</button></div></div></div></div>
+    <div class="modal fade" id="empModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0"><h5 class="modal-title fw-bold">Add Employee</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="text" id="e-name" class="form-control mb-2" placeholder="Full Name">
+                    <input type="text" id="e-user" class="form-control mb-2" placeholder="Username (ID)">
+                    <input type="password" id="e-pass" class="form-control mb-2" placeholder="Password">
+                    <input type="email" id="e-mail" class="form-control mb-2" placeholder="Email">
+                    <select id="e-role" class="form-select mb-2"><option value="Employee">Employee</option><option value="Admin">Admin</option></select>
+                    <input type="number" id="e-bal" class="form-control mb-2" placeholder="Balance" value="20">
+                </div>
+                <div class="modal-footer border-0">
+                    <button onclick="addEmployee()" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="balModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Update Balance</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="eb-user"><label class="small fw-bold">New Balance</label><input type="number" id="eb-val" class="form-control" step="0.5"></div><div class="modal-footer border-0"><button onclick="saveBalance()" class="btn btn-success">Update</button></div></div></div></div>
     <div class="modal fade" id="passModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Change Password</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="password" id="old-pass" class="form-control mb-3" placeholder="Current Password"><input type="password" id="new-pass" class="form-control mb-3" placeholder="New Password"><input type="password" id="confirm-pass" class="form-control" placeholder="Confirm New Password"></div><div class="modal-footer border-0"><button onclick="changePassword()" class="btn btn-primary">Save</button></div></div></div></div>
 
@@ -198,6 +295,7 @@
             document.getElementById('u-role').textContent = u.role;
             document.getElementById('u-balance').textContent = u.balance;
             document.getElementById('disp-balance').textContent = u.balance;
+            
             document.getElementById('mobile-menu-btn').style.display = 'block';
 
             if (u.role === 'Admin') {
@@ -217,8 +315,10 @@
             document.getElementById('page-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             if(event && event.target.closest('.nav-link')) event.target.closest('.nav-link').classList.add('active');
+            
             document.querySelector('.sidebar').classList.remove('active');
             document.getElementById('sidebar-overlay').classList.remove('active');
+
             if(id === 'new-req' && calendarObj) setTimeout(() => calendarObj.updateSize(), 200);
             if(id === 'my-req') renderMyRequests();
             if(id === 'admin-req') renderAdminRequests();
@@ -232,18 +332,20 @@
             document.getElementById('st-pending').textContent = all.filter(r=>r.status==='Pending').length;
             document.getElementById('st-approved').textContent = all.filter(r=>r.status==='Approved').length;
             document.getElementById('st-rejected').textContent = all.filter(r=>r.status==='Rejected').length;
+
             const today = new Date().toISOString().split('T')[0];
             const out = (DATA.teamLeaves||[]).filter(l => today >= l.start && today <= l.end);
             const container = document.getElementById('team-view-container');
             if (out.length === 0) container.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success px-3 py-2">All Present</span>';
-            else container.innerHTML = out.map(o => `<div class="d-flex align-items-center bg-light rounded p-2 border"><div class="bg-primary text-white rounded-circle d-flex me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div><div style="line-height:1.2"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type} - Until ${o.end}</small></div></div>`).join('');
+            else container.innerHTML = out.map(o => `<div class="d-flex align-items-center bg-light rounded p-2 border"><div class="bg-primary text-white rounded-circle d-flex center me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div><div style="line-height:1.2"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type} - Until ${o.end}</small></div></div>`).join('');
         }
 
         function initCalendar() {
             const el = document.getElementById('calendar');
             if(!el) return;
             calendarObj = new FullCalendar.Calendar(el, {
-                initialView: 'dayGridMonth', height: 550, headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
+                initialView: 'dayGridMonth', height: 550,
+                headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 dateClick: (info) => {
                     const today = new Date().toISOString().split('T')[0];
                     if (info.dateStr < today) return Swal.fire('','Past Date','warning');
@@ -261,6 +363,12 @@
                 }
             });
             calendarObj.render();
+        }
+
+        // 🔴 FIX: Date format helper to prevent day shifting
+        function toISODate(dateStr) {
+            if(!dateStr) return "";
+            return new Date(dateStr).toISOString().split('T')[0];
         }
 
         function getDailyLimit(d) {
@@ -294,7 +402,8 @@
             const s = document.getElementById('m-start').value;
             const e = document.getElementById('m-end').value;
             if(s && e) {
-                const diff = Math.abs(new Date(e) - new Date(s));
+                const d1 = new Date(s); const d2 = new Date(e);
+                const diff = Math.abs(d2 - d1);
                 document.getElementById('req-days').textContent = Math.ceil(diff/(1000*60*60*24)) + 1;
             }
         }
@@ -313,8 +422,7 @@
             if (['Annual', 'Unpaid', 'Maternity', 'Paternity'].includes(form.type)) {
                 const today = new Date(); today.setHours(0,0,0,0);
                 const minDate = new Date(today); minDate.setDate(today.getDate() + 2);
-                const selDate = new Date(form.start); selDate.setHours(0,0,0,0);
-                if (selDate < minDate) return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
+                if (new Date(form.start) < minDate) return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
             }
 
             if (form.type === 'Medical') {
@@ -351,11 +459,13 @@
                 if (res.success) {
                     DATA = res;
                     DATA.settings = DATA.settings || []; DATA.approvedRequests = DATA.approvedRequests || []; DATA.teamLeaves = DATA.teamLeaves || [];
+                    
                     if (DATA.user.role === 'Admin') {
                         renderDashboard();
                         const pending = (DATA.allRequests||[]).filter(r=>r.status==='Pending').length;
                         document.getElementById('badge-pending').textContent = pending;
                         pending > 0 ? document.getElementById('badge-pending').classList.remove('hidden') : document.getElementById('badge-pending').classList.add('hidden');
+                        
                         if (!document.getElementById('page-admin-req').classList.contains('hidden')) renderAdminRequests();
                         if (!document.getElementById('page-employees').classList.contains('hidden')) loadEmployees();
                         if (!document.getElementById('page-settings').classList.contains('hidden')) renderSettings();
@@ -369,27 +479,56 @@
             } catch (e) { console.error('Refresh failed:', e); }
         }
 
+        // --- View Functions ---
         function renderMyRequests() { document.getElementById('tb-my-req').innerHTML = (DATA.myRequests||[]).map(r => `<tr><td>${r.timestamp||'-'}</td><td><span class="badge bg-secondary">${r.type}</span></td><td>${r.start} -> ${r.end}</td><td><strong>${r.days}</strong></td><td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td><td>${r.notes||'-'}</td><td>${r.attachment?`<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file"></i></a>`:'-'}</td></tr>`).join(''); }
         function renderAdminRequests() { document.getElementById('tb-admin-req').innerHTML = (DATA.allRequests||[]).map(r => `<tr><td><strong>${r.name}</strong><br><small>${r.username}</small></td><td>${r.type}</td><td>${r.start}<br><small>${r.end}</small></td><td><strong>${r.days}</strong></td><td>${r.status}</td><td>${r.attachment?`<a href="${r.attachment}" target="_blank">View</a>`:''}</td><td>${r.status==='Pending'?`<button onclick="adminAct('${r.id}','Approved')" class="btn btn-sm btn-success">✔</button> <button onclick="adminAct('${r.id}','Rejected')" class="btn btn-sm btn-danger">✘</button>`:''}</td></tr>`).join(''); }
         async function adminAct(id, act) { if(!(await Swal.fire({title:act+'?',icon:'question',showCancelButton:true})).isConfirmed) return; showLoading('Processing...'); await apiCall({action:'adminAction',id,act,notes:''}); await refreshData(); hideLoading(); }
+        
         async function loadEmployees() { try { const res = await apiCall({action:'getAllEmployees'}); if(res.success) document.getElementById('tb-employees').innerHTML = res.employees.map(e => `<tr><td>${e.name}</td><td>${e.username}</td><td>${e.role}</td><td>${e.email}</td><td>${e.balance}</td><td><button onclick="openBalModal('${e.username}',${e.balance})" class="btn btn-sm btn-outline-warning">Edit</button></td></tr>`).join(''); } catch(e){} }
         
         function openAddEmpModal() { 
-            document.getElementById('e-name').value=''; document.getElementById('e-user').value=''; document.getElementById('e-pass').value=''; document.getElementById('e-email').value='';
+            document.getElementById('e-name').value=''; 
+            document.getElementById('e-user').value=''; 
+            document.getElementById('e-pass').value='';
+            document.getElementById('e-email').value='';
             empModalObj = new bootstrap.Modal(document.getElementById('empModal'));
             empModalObj.show(); 
         }
         
+        // 🔴 FIX: Cleaned up Add Employee function
         async function addEmployee() { 
-            const emp={name:document.getElementById('e-name').value, username:document.getElementById('e-user').value, password:document.getElementById('e-pass').value, email:document.getElementById('e-email').value, role:document.getElementById('e-role').value, balance:document.getElementById('e-bal').value}; 
-            if(!emp.name || !emp.username || !emp.password) return Swal.fire('Error','Missing fields','error');
+            const emp={
+                name:document.getElementById('e-name').value, 
+                username:document.getElementById('e-user').value, 
+                password:document.getElementById('e-pass').value, 
+                email:document.getElementById('e-email').value, 
+                role:document.getElementById('e-role').value, 
+                balance:document.getElementById('e-bal').value
+            }; 
+            
+            if(!emp.name || !emp.username || !emp.password) return Swal.fire('Error','Missing required fields','error');
+            
             showLoading('Saving...'); 
             if(empModalObj) empModalObj.hide();
+
             try {
                 const res = await apiCall({action:'addEmployee', employee:emp}); 
-                if(res.success) { Swal.fire('Success','Employee Added','success'); await refreshData(); }
-                else { Swal.fire('Error', res.message, 'error'); if(empModalObj) empModalObj.show(); }
-            } catch(e) { Swal.fire('Error','Failed','error'); if(empModalObj) empModalObj.show(); }
+                if(res.success) { 
+                    Swal.fire('Success','Employee Added','success'); 
+                    // Clear inputs on success
+                    document.getElementById('e-name').value=''; 
+                    document.getElementById('e-user').value=''; 
+                    document.getElementById('e-pass').value='';
+                    document.getElementById('e-email').value='';
+                    await refreshData(); 
+                } else { 
+                    Swal.fire('Error', res.message, 'error'); 
+                    if(empModalObj) empModalObj.show();
+                }
+            } catch(e) { 
+                Swal.fire('Error','Failed to add','error'); 
+                if(empModalObj) empModalObj.show();
+            }
             hideLoading(); 
         }
         
@@ -401,24 +540,21 @@
         
         function renderSettings() { document.getElementById('tb-settings').innerHTML = (DATA.settings||[]).filter(x=>x.type==='Season').map((x,i) => `<tr><td>${x.start}</td><td>${x.end}</td><td>${x.limit}</td><td><button onclick="delSet(${i})" class="btn btn-sm btn-danger">X</button></td></tr>`).join(''); }
         
-        // 🔴 FIX: Date Shift Fix (Manual +1 Day)
-        function fixDate(dateStr) {
-            if(!dateStr) return "";
-            const d = new Date(dateStr);
-            return d.toISOString().split('T')[0]; // Simple format
-        }
-
+        // 🔴 FIX: Settings Date & Clearing
         async function saveSeason() { 
             const start = document.getElementById('s-start').value;
             const end = document.getElementById('s-end').value;
             const limit = document.getElementById('s-limit').value;
-            
-            if(!start || !end || limit==="") return Swal.fire('Error', 'Missing fields', 'error');
+
+            if(!start || !end || limit === "") return Swal.fire('Error', 'Missing fields', 'error');
 
             showLoading('Saving...'); 
+            
+            // Use inputs directly, backend should handle string to avoid timezone shift if possible, 
+            // but for safety we send as is.
             await apiCall({ action:'saveSeason', start:start, end:end, limit:limit}); 
             
-            // Clear inputs
+            // 🔴 FIX: Clear inputs
             document.getElementById('s-start').value = "";
             document.getElementById('s-end').value = "";
             document.getElementById('s-limit').value = "";
