@@ -279,16 +279,48 @@
             <!-- Settings -->
             <div id="page-settings" class="page-section hidden">
                 <h3 class="fw-bold mb-4">Settings</h3>
+                
+                <!-- Default Limit Card -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card-custom border-primary" style="border-width: 2px;">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="fw-bold mb-2 text-primary">
+                                        <i class="fas fa-sliders-h me-2"></i>
+                                        Default Daily Limit
+                                    </h6>
+                                    <p class="small text-muted mb-0">
+                                        Maximum number of employees on leave per day (applies outside seasonal rules)
+                                    </p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <input type="number" id="default-limit" class="form-control" placeholder="e.g., 2" min="0" step="1">
+                                        <button onclick="updateDefaultLimit()" class="btn btn-primary">
+                                            <i class="fas fa-save"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted d-block mt-2 text-center">
+                                        Current: <strong id="current-default" class="text-primary">-</strong>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Seasonal Rules Section -->
                 <div class="row">
                     <div class="col-md-5">
                         <div class="card-custom">
                             <h6 class="fw-bold mb-3">Add Seasonal Rule</h6>
-                            <p class="small text-muted mb-3">Block or limit specific date ranges</p>
+                            <p class="small text-muted mb-3">Override the default limit for specific date ranges</p>
                             <label class="small fw-bold">Start Date</label>
                             <input type="date" id="s-start" class="form-control mb-2">
                             <label class="small fw-bold">End Date</label>
                             <input type="date" id="s-end" class="form-control mb-2">
-                            <label class="small fw-bold">Limit (0 = Block All)</label>
+                            <label class="small fw-bold">Daily Limit (0 = Block All)</label>
                             <input type="number" id="s-limit" class="form-control mb-3" placeholder="e.g., 0" min="0">
                             <button onclick="saveSeason()" class="btn btn-dark w-100">
                                 <i class="fas fa-plus me-2"></i> Add Rule
@@ -297,7 +329,7 @@
                     </div>
                     <div class="col-md-7">
                         <div class="card-custom">
-                            <h6 class="fw-bold mb-3">Active Rules</h6>
+                            <h6 class="fw-bold mb-3">Active Seasonal Rules</h6>
                             <div class="table-responsive">
                                 <table class="table table-sm">
                                     <thead>
@@ -1000,8 +1032,18 @@
             const seasons = (DATA.settings || []).filter(x => x.type === 'Season');
             const tbody = document.getElementById('tb-settings');
             
+            // Update current default limit display
+            const defaultSetting = (DATA.settings || []).find(x => x.type === 'Default');
+            if (defaultSetting) {
+                document.getElementById('current-default').textContent = defaultSetting.limit;
+                document.getElementById('default-limit').value = defaultSetting.limit;
+            } else {
+                document.getElementById('current-default').textContent = '2 (default)';
+                document.getElementById('default-limit').value = '2';
+            }
+            
             if (seasons.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No rules defined</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No seasonal rules defined</td></tr>';
                 return;
             }
             
@@ -1017,6 +1059,42 @@
                     </td>
                 </tr>
             `).join('');
+        }
+        
+        async function updateDefaultLimit() {
+            const newLimit = document.getElementById('default-limit').value;
+            
+            if (newLimit === '' || newLimit < 0) {
+                return Swal.fire('Invalid Value', 'Please enter a valid number (0 or greater)', 'error');
+            }
+            
+            showLoading('Updating default limit...');
+            
+            try {
+                const res = await apiCall({
+                    action: 'updateDefaultLimit',
+                    limit: parseInt(newLimit)
+                });
+                
+                if (res.success) {
+                    await refreshData();
+                    renderSettings();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Updated!',
+                        text: `Default limit set to ${newLimit}`,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Failed to update', 'error');
+            }
+            
+            hideLoading();
         }
 
         async function saveSeason() {
