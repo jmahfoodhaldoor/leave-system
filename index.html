@@ -1043,6 +1043,7 @@
                 document.getElementById('s-end').value = '';
                 document.getElementById('s-limit').value = '';
                 await refreshData();
+                renderSettings(); // 🔴 إضافة هذا السطر
             } catch (e) {
                 Swal.fire('Error', 'Failed to save', 'error');
             }
@@ -1068,6 +1069,7 @@
                 await apiCall({ action: 'deleteSetting', index: i });
                 Swal.fire('Deleted', 'Rule removed', 'success');
                 await refreshData();
+                renderSettings(); // 🔴 إضافة هذا السطر
             } catch (e) {
                 Swal.fire('Error', 'Failed to delete', 'error');
             }
@@ -1108,6 +1110,12 @@
                     if (calendarObj) {
                         calendarObj.refetchEvents();
                         calendarObj.render();
+                    }
+                    
+                    // 🔴 إذا المستخدم في صفحة Settings، نحدّث الجدول
+                    const currentPage = document.querySelector('.page-section:not(.hidden)');
+                    if (currentPage && currentPage.id === 'page-settings') {
+                        renderSettings();
                     }
                 }
             } catch (e) {
