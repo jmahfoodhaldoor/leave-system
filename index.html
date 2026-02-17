@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 🔴🔴🔴 هام: ضع رابط Google Apps Script (Version 22) هنا 🔴🔴🔴
+        // 🔴🔴🔴 ضع الرابط الجديد هنا 🔴🔴🔴
         const API_URL = "https://script.google.com/macros/s/AKfycbzqnlL3-wlQFop9WMwEgx1JT7DqD_Ss_56tI_86NF6J54d5I7X0qEFRPdzQDdkOScEHVg/exec";
     </script>
 
@@ -161,12 +161,7 @@
         let DATA = { user: {}, settings: [], approvedRequests: [], myRequests: [], teamLeaves: [] };
         let calendarObj = null;
         let CURRENT_PASSWORD = "";
-        
-        // GLOBAL MODAL INSTANCES (TO FIX OPEN/CLOSE ISSUES)
         let empModalObj = null;
-        let balModalObj = null;
-        let reqModalObj = null;
-        let passModalObj = null;
 
         function showLoading(text) { document.getElementById('loading-overlay').classList.remove('hidden'); if(text) document.querySelector('.loading-text').textContent=text; }
         function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
@@ -203,7 +198,6 @@
             document.getElementById('u-role').textContent = u.role;
             document.getElementById('u-balance').textContent = u.balance;
             document.getElementById('disp-balance').textContent = u.balance;
-            
             document.getElementById('mobile-menu-btn').style.display = 'block';
 
             if (u.role === 'Admin') {
@@ -223,10 +217,8 @@
             document.getElementById('page-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             if(event && event.target.closest('.nav-link')) event.target.closest('.nav-link').classList.add('active');
-            
             document.querySelector('.sidebar').classList.remove('active');
             document.getElementById('sidebar-overlay').classList.remove('active');
-
             if(id === 'new-req' && calendarObj) setTimeout(() => calendarObj.updateSize(), 200);
             if(id === 'my-req') renderMyRequests();
             if(id === 'admin-req') renderAdminRequests();
@@ -240,20 +232,18 @@
             document.getElementById('st-pending').textContent = all.filter(r=>r.status==='Pending').length;
             document.getElementById('st-approved').textContent = all.filter(r=>r.status==='Approved').length;
             document.getElementById('st-rejected').textContent = all.filter(r=>r.status==='Rejected').length;
-
             const today = new Date().toISOString().split('T')[0];
             const out = (DATA.teamLeaves||[]).filter(l => today >= l.start && today <= l.end);
             const container = document.getElementById('team-view-container');
             if (out.length === 0) container.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success px-3 py-2">All Present</span>';
-            else container.innerHTML = out.map(o => `<div class="d-flex align-items-center bg-light rounded p-2 border"><div class="bg-primary text-white rounded-circle d-flex center me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div><div style="line-height:1.2"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type} - Until ${o.end}</small></div></div>`).join('');
+            else container.innerHTML = out.map(o => `<div class="d-flex align-items-center bg-light rounded p-2 border"><div class="bg-primary text-white rounded-circle d-flex me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div><div style="line-height:1.2"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type} - Until ${o.end}</small></div></div>`).join('');
         }
 
         function initCalendar() {
             const el = document.getElementById('calendar');
             if(!el) return;
             calendarObj = new FullCalendar.Calendar(el, {
-                initialView: 'dayGridMonth', height: 550,
-                headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
+                initialView: 'dayGridMonth', height: 550, headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 dateClick: (info) => {
                     const today = new Date().toISOString().split('T')[0];
                     if (info.dateStr < today) return Swal.fire('','Past Date','warning');
@@ -264,8 +254,7 @@
                     const d = arg.date.toISOString().split('T')[0];
                     const today = new Date().toISOString().split('T')[0];
                     if (d < today) return ['day-past'];
-                    const lim = getDailyLimit(d);
-                    const cnt = getApprovedCount(d);
+                    const lim = getDailyLimit(d); const cnt = getApprovedCount(d);
                     if (lim === 0 || cnt >= lim) return ['day-blocked'];
                     if (cnt >= lim - 1) return ['day-limited'];
                     return [];
@@ -290,8 +279,7 @@
             document.getElementById('m-file').value = '';
             document.getElementById('req-bal').textContent = DATA.user ? DATA.user.balance : 0;
             updateModalUI(); calcDays();
-            reqModalObj = new bootstrap.Modal(document.getElementById('reqModal'));
-            reqModalObj.show();
+            new bootstrap.Modal(document.getElementById('reqModal')).show();
         }
 
         function updateModalUI() {
@@ -306,8 +294,7 @@
             const s = document.getElementById('m-start').value;
             const e = document.getElementById('m-end').value;
             if(s && e) {
-                const d1 = new Date(s); const d2 = new Date(e);
-                const diff = Math.abs(d2 - d1);
+                const diff = Math.abs(new Date(e) - new Date(s));
                 document.getElementById('req-days').textContent = Math.ceil(diff/(1000*60*60*24)) + 1;
             }
         }
@@ -326,7 +313,8 @@
             if (['Annual', 'Unpaid', 'Maternity', 'Paternity'].includes(form.type)) {
                 const today = new Date(); today.setHours(0,0,0,0);
                 const minDate = new Date(today); minDate.setDate(today.getDate() + 2);
-                if (new Date(form.start) < minDate) return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
+                const selDate = new Date(form.start); selDate.setHours(0,0,0,0);
+                if (selDate < minDate) return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
             }
 
             if (form.type === 'Medical') {
@@ -348,7 +336,7 @@
 
         async function submitData(form, fileData) {
             showLoading('Sending...');
-            if(reqModalObj) reqModalObj.hide();
+            bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide();
             try {
                 const res = await apiCall({ action: 'submitRequest', form: form, fileData: fileData });
                 if (res.success) { Swal.fire('Success', 'Request Sent', 'success'); await refreshData(); } 
@@ -363,13 +351,11 @@
                 if (res.success) {
                     DATA = res;
                     DATA.settings = DATA.settings || []; DATA.approvedRequests = DATA.approvedRequests || []; DATA.teamLeaves = DATA.teamLeaves || [];
-                    
                     if (DATA.user.role === 'Admin') {
                         renderDashboard();
                         const pending = (DATA.allRequests||[]).filter(r=>r.status==='Pending').length;
                         document.getElementById('badge-pending').textContent = pending;
                         pending > 0 ? document.getElementById('badge-pending').classList.remove('hidden') : document.getElementById('badge-pending').classList.add('hidden');
-                        
                         if (!document.getElementById('page-admin-req').classList.contains('hidden')) renderAdminRequests();
                         if (!document.getElementById('page-employees').classList.contains('hidden')) loadEmployees();
                         if (!document.getElementById('page-settings').classList.contains('hidden')) renderSettings();
@@ -389,71 +375,57 @@
         async function loadEmployees() { try { const res = await apiCall({action:'getAllEmployees'}); if(res.success) document.getElementById('tb-employees').innerHTML = res.employees.map(e => `<tr><td>${e.name}</td><td>${e.username}</td><td>${e.role}</td><td>${e.email}</td><td>${e.balance}</td><td><button onclick="openBalModal('${e.username}',${e.balance})" class="btn btn-sm btn-outline-warning">Edit</button></td></tr>`).join(''); } catch(e){} }
         
         function openAddEmpModal() { 
-            document.getElementById('e-name').value=''; 
-            document.getElementById('e-user').value=''; 
-            document.getElementById('e-pass').value='';
-            document.getElementById('e-email').value='';
+            document.getElementById('e-name').value=''; document.getElementById('e-user').value=''; document.getElementById('e-pass').value=''; document.getElementById('e-email').value='';
             empModalObj = new bootstrap.Modal(document.getElementById('empModal'));
             empModalObj.show(); 
         }
         
-        // 🔴 FIX: Robust Add Employee with Duplicate Check & UI Feedback
         async function addEmployee() { 
-            const emp={
-                name:document.getElementById('e-name').value, 
-                username:document.getElementById('e-user').value, 
-                password:document.getElementById('e-pass').value, 
-                email:document.getElementById('e-email').value, 
-                role:document.getElementById('e-role').value, 
-                balance:document.getElementById('e-bal').value
-            }; 
-            
-            if(!emp.name || !emp.username || !emp.password) return Swal.fire('Error','Missing required fields','error');
-            
-            // Check frontend if username likely exists (optional quick check)
-            // But main check is backend. 
-            
+            const emp={name:document.getElementById('e-name').value, username:document.getElementById('e-user').value, password:document.getElementById('e-pass').value, email:document.getElementById('e-email').value, role:document.getElementById('e-role').value, balance:document.getElementById('e-bal').value}; 
+            if(!emp.name || !emp.username || !emp.password) return Swal.fire('Error','Missing fields','error');
             showLoading('Saving...'); 
             if(empModalObj) empModalObj.hide();
-
             try {
                 const res = await apiCall({action:'addEmployee', employee:emp}); 
-                if(res.success) { 
-                    Swal.fire('Success','Employee Added','success'); 
-                    await refreshData(); 
-                } else { 
-                    Swal.fire('Error', res.message, 'error'); 
-                    // Re-open if failed
-                    if(empModalObj) empModalObj.show();
-                }
-            } catch(e) { 
-                Swal.fire('Error','Failed to add','error'); 
-                if(empModalObj) empModalObj.show();
-            }
+                if(res.success) { Swal.fire('Success','Employee Added','success'); await refreshData(); }
+                else { Swal.fire('Error', res.message, 'error'); if(empModalObj) empModalObj.show(); }
+            } catch(e) { Swal.fire('Error','Failed','error'); if(empModalObj) empModalObj.show(); }
             hideLoading(); 
         }
         
-        function openBalModal(u,b) { 
-            document.getElementById('eb-user').value=u; 
-            document.getElementById('eb-val').value=b; 
-            balModalObj = new bootstrap.Modal(document.getElementById('balModal'));
-            balModalObj.show(); 
-        }
-        async function saveBalance() { 
-            showLoading(); if(balModalObj) balModalObj.hide();
-            await apiCall({action:'updateBalance', username:document.getElementById('eb-user').value, balance:document.getElementById('eb-val').value}); 
-            await refreshData(); hideLoading(); 
-        }
+        function openBalModal(u,b) { document.getElementById('eb-user').value=u; document.getElementById('eb-val').value=b; new bootstrap.Modal(document.getElementById('balModal')).show(); }
+        async function saveBalance() { showLoading(); bootstrap.Modal.getInstance(document.getElementById('balModal')).hide(); await apiCall({action:'updateBalance', username:document.getElementById('eb-user').value, balance:document.getElementById('eb-val').value}); await refreshData(); hideLoading(); }
         
-        function openChangePassword() { 
-            document.getElementById('old-pass').value=''; 
-            passModalObj = new bootstrap.Modal(document.getElementById('passModal'));
-            passModalObj.show(); 
-        }
-        async function changePassword() { const o=document.getElementById('old-pass').value, n=document.getElementById('new-pass').value; showLoading('Changing...'); if(passModalObj) passModalObj.hide(); const res = await apiCall({action:'changePassword', username:DATA.user.username, oldPass:o, newPass:n}); Swal.fire(res.success?'Success':'Error', res.message, res.success?'success':'error'); hideLoading(); }
+        function openChangePassword() { document.getElementById('old-pass').value=''; new bootstrap.Modal(document.getElementById('passModal')).show(); }
+        async function changePassword() { const o=document.getElementById('old-pass').value, n=document.getElementById('new-pass').value; showLoading('Changing...'); bootstrap.Modal.getInstance(document.getElementById('passModal')).hide(); const res = await apiCall({action:'changePassword', username:DATA.user.username, oldPass:o, newPass:n}); Swal.fire(res.success?'Success':'Error', res.message, res.success?'success':'error'); hideLoading(); }
         
         function renderSettings() { document.getElementById('tb-settings').innerHTML = (DATA.settings||[]).filter(x=>x.type==='Season').map((x,i) => `<tr><td>${x.start}</td><td>${x.end}</td><td>${x.limit}</td><td><button onclick="delSet(${i})" class="btn btn-sm btn-danger">X</button></td></tr>`).join(''); }
-        async function saveSeason() { showLoading('Saving...'); await apiCall({ action:'saveSeason', start:document.getElementById('s-start').value, end:document.getElementById('s-end').value, limit:document.getElementById('s-limit').value}); await refreshData(); hideLoading(); }
+        
+        // 🔴 FIX: Date Shift Fix (Manual +1 Day)
+        function fixDate(dateStr) {
+            if(!dateStr) return "";
+            const d = new Date(dateStr);
+            return d.toISOString().split('T')[0]; // Simple format
+        }
+
+        async function saveSeason() { 
+            const start = document.getElementById('s-start').value;
+            const end = document.getElementById('s-end').value;
+            const limit = document.getElementById('s-limit').value;
+            
+            if(!start || !end || limit==="") return Swal.fire('Error', 'Missing fields', 'error');
+
+            showLoading('Saving...'); 
+            await apiCall({ action:'saveSeason', start:start, end:end, limit:limit}); 
+            
+            // Clear inputs
+            document.getElementById('s-start').value = "";
+            document.getElementById('s-end').value = "";
+            document.getElementById('s-limit').value = "";
+            
+            await refreshData(); 
+            hideLoading(); 
+        }
         async function delSet(i) { if(confirm('Delete?')) { showLoading('Deleting...'); await apiCall({action:'deleteSetting', index:i}); await refreshData(); hideLoading(); } }
     </script>
 </body>
