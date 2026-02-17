@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 🔴🔴🔴 هام: تأكد أن هذا الرابط هو (New Version) من الـ Deploy 🔴🔴🔴
+        // 🔴🔴🔴 ضع الرابط الجديد هنا 🔴🔴🔴
         const API_URL = "https://script.google.com/macros/s/AKfycbzqnlL3-wlQFop9WMwEgx1JT7DqD_Ss_56tI_86NF6J54d5I7X0qEFRPdzQDdkOScEHVg/exec";
     </script>
 
@@ -174,7 +174,7 @@
             const u = document.getElementById('login-user').value.trim();
             const p = document.getElementById('login-pass').value.trim();
             if(!u || !p) return Swal.fire('Error', 'Required fields', 'error');
-            showLoading('Loading...');
+            showLoading('Signing in...');
             try {
                 const res = await apiCall({ action: 'login', username: u, password: p });
                 if (res.success) { 
@@ -239,7 +239,7 @@
             const out = (DATA.teamLeaves||[]).filter(l => today >= l.start && today <= l.end);
             const container = document.getElementById('team-view-container');
             if (out.length === 0) container.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success px-3 py-2">All Present</span>';
-            else container.innerHTML = out.map(o => `<div class="d-flex align-items-center bg-light rounded p-2 border"><div class="bg-primary text-white rounded-circle d-flex me-2" style="width:35px;height:35px;align-items:center;justify-content:center">${o.name.charAt(0)}</div><div style="line-height:1.2"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type} - Until ${o.end}</small></div></div>`).join('');
+            else container.innerHTML = out.map(o => `<div class="d-flex align-items-center bg-light rounded p-2 border"><div class="bg-primary text-white rounded-circle d-flex me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div><div style="line-height:1.2"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type} - Until ${o.end}</small></div></div>`).join('');
         }
 
         function initCalendar() {
@@ -316,12 +316,10 @@
             
             if (new Date(form.end) < new Date(form.start)) return Swal.fire('Error', 'Invalid dates', 'error');
 
-            // 48-Hour Rule
             if (['Annual', 'Unpaid', 'Maternity', 'Paternity'].includes(form.type)) {
                 const today = new Date(); today.setHours(0,0,0,0);
                 const minDate = new Date(today); minDate.setDate(today.getDate() + 2);
-                const selDate = new Date(form.start); selDate.setHours(0,0,0,0);
-                if (selDate < minDate) return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
+                if (new Date(form.start) < minDate) return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
             }
 
             if (form.type === 'Medical') {
@@ -352,7 +350,7 @@
             hideLoading();
         }
 
-        // 🔴🔴🔴 THE "LIVE" FIX (Updates Tables Immediately) 🔴🔴🔴
+        // 🔴🔴🔴 Live Fix Function 🔴🔴🔴
         async function refreshData() {
             try {
                 const res = await apiCall({ action: 'login', username: DATA.user.username, password: CURRENT_PASSWORD });
@@ -360,74 +358,60 @@
                     DATA = res;
                     DATA.settings = DATA.settings || []; DATA.approvedRequests = DATA.approvedRequests || []; DATA.teamLeaves = DATA.teamLeaves || [];
                     
-                    // 1. Refresh Dashboard numbers
-                    renderDashboard();
-                    
-                    // 2. Refresh Admin Views (if admin)
                     if (DATA.user.role === 'Admin') {
+                        renderDashboard();
                         const pending = (DATA.allRequests||[]).filter(r=>r.status==='Pending').length;
                         document.getElementById('badge-pending').textContent = pending;
                         pending > 0 ? document.getElementById('badge-pending').classList.remove('hidden') : document.getElementById('badge-pending').classList.add('hidden');
                         
-                        // Force refresh tables if they are visible
                         if (!document.getElementById('page-admin-req').classList.contains('hidden')) renderAdminRequests();
                         if (!document.getElementById('page-employees').classList.contains('hidden')) loadEmployees();
                         if (!document.getElementById('page-settings').classList.contains('hidden')) renderSettings();
                     } else {
-                        // 3. Refresh Employee Views
                         document.getElementById('u-balance').textContent = DATA.user.balance;
                         document.getElementById('disp-balance').textContent = DATA.user.balance;
                         if (!document.getElementById('page-my-req').classList.contains('hidden')) renderMyRequests();
                     }
-                    
-                    // 4. Refresh Calendar
                     if (calendarObj) { calendarObj.refetchEvents(); calendarObj.render(); }
                 }
             } catch (e) { console.error('Refresh failed:', e); }
         }
 
-        // --- View Functions ---
+        // --- Other functions ---
         function renderMyRequests() { document.getElementById('tb-my-req').innerHTML = (DATA.myRequests||[]).map(r => `<tr><td>${r.timestamp||'-'}</td><td><span class="badge bg-secondary">${r.type}</span></td><td>${r.start} -> ${r.end}</td><td><strong>${r.days}</strong></td><td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td><td>${r.notes||'-'}</td><td>${r.attachment?`<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file"></i></a>`:'-'}</td></tr>`).join(''); }
         function renderAdminRequests() { document.getElementById('tb-admin-req').innerHTML = (DATA.allRequests||[]).map(r => `<tr><td><strong>${r.name}</strong><br><small>${r.username}</small></td><td>${r.type}</td><td>${r.start}<br><small>${r.end}</small></td><td><strong>${r.days}</strong></td><td>${r.status}</td><td>${r.attachment?`<a href="${r.attachment}" target="_blank">View</a>`:''}</td><td>${r.status==='Pending'?`<button onclick="adminAct('${r.id}','Approved')" class="btn btn-sm btn-success">✔</button> <button onclick="adminAct('${r.id}','Rejected')" class="btn btn-sm btn-danger">✘</button>`:''}</td></tr>`).join(''); }
         async function adminAct(id, act) { if(!(await Swal.fire({title:act+'?',icon:'question',showCancelButton:true})).isConfirmed) return; showLoading(); await apiCall({action:'adminAction',id,act,notes:''}); await refreshData(); hideLoading(); }
-        
         async function loadEmployees() { try { const res = await apiCall({action:'getAllEmployees'}); if(res.success) document.getElementById('tb-employees').innerHTML = res.employees.map(e => `<tr><td>${e.name}</td><td>${e.username}</td><td>${e.role}</td><td>${e.email}</td><td>${e.balance}</td><td><button onclick="openBalModal('${e.username}',${e.balance})" class="btn btn-sm btn-outline-warning">Edit</button></td></tr>`).join(''); } catch(e){} }
         
         function openAddEmpModal() { document.getElementById('e-name').value=''; new bootstrap.Modal(document.getElementById('empModal')).show(); }
+        // 🔴 FIX: Fixed Add Employee Logic 🔴
         async function addEmployee() { 
             const emp={name:document.getElementById('e-name').value, username:document.getElementById('e-user').value, password:document.getElementById('e-pass').value, email:document.getElementById('e-email').value, role:document.getElementById('e-role').value, balance:document.getElementById('e-bal').value}; 
-            showLoading('Saving...'); bootstrap.Modal.getInstance(document.getElementById('empModal')).hide();
-            await apiCall({action:'addEmployee', employee:emp}); 
-            await refreshData(); // Force refresh to update list
+            if(!emp.name || !emp.username || !emp.password) return Swal.fire('Error','Missing fields','error');
+            showLoading('Saving...'); 
+            
+            // Close modal safely
+            const modalEl = document.getElementById('empModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if(modalInstance) modalInstance.hide();
+
+            try {
+                const res = await apiCall({action:'addEmployee', employee:emp}); 
+                if(res.success) { Swal.fire('Success','Employee Added','success'); await refreshData(); }
+                else { Swal.fire('Error', res.message, 'error'); new bootstrap.Modal(modalEl).show(); }
+            } catch(e) { Swal.fire('Error','Failed','error'); }
             hideLoading(); 
         }
         
         function openBalModal(u,b) { document.getElementById('eb-user').value=u; document.getElementById('eb-val').value=b; new bootstrap.Modal(document.getElementById('balModal')).show(); }
-        async function saveBalance() { 
-            showLoading(); bootstrap.Modal.getInstance(document.getElementById('balModal')).hide();
-            await apiCall({action:'updateBalance', username:document.getElementById('eb-user').value, balance:document.getElementById('eb-val').value}); 
-            await refreshData(); // Force refresh
-            hideLoading(); 
-        }
+        async function saveBalance() { showLoading(); bootstrap.Modal.getInstance(document.getElementById('balModal')).hide(); await apiCall({action:'updateBalance', username:document.getElementById('eb-user').value, balance:document.getElementById('eb-val').value}); await refreshData(); hideLoading(); }
         
         function openChangePassword() { document.getElementById('old-pass').value=''; new bootstrap.Modal(document.getElementById('passModal')).show(); }
-        async function changePassword() { const o=document.getElementById('old-pass').value, n=document.getElementById('new-pass').value; showLoading(); const res = await apiCall({action:'changePassword', username:DATA.user.username, oldPass:o, newPass:n}); Swal.fire(res.success?'Success':'Error', res.message, res.success?'success':'error'); hideLoading(); bootstrap.Modal.getInstance(document.getElementById('passModal')).hide(); }
+        async function changePassword() { const o=document.getElementById('old-pass').value, n=document.getElementById('new-pass').value; showLoading('Changing...'); bootstrap.Modal.getInstance(document.getElementById('passModal')).hide(); const res = await apiCall({action:'changePassword', username:DATA.user.username, oldPass:o, newPass:n}); Swal.fire(res.success?'Success':'Error', res.message, res.success?'success':'error'); hideLoading(); }
         
         function renderSettings() { document.getElementById('tb-settings').innerHTML = (DATA.settings||[]).filter(x=>x.type==='Season').map((x,i) => `<tr><td>${x.start}</td><td>${x.end}</td><td>${x.limit}</td><td><button onclick="delSet(${i})" class="btn btn-sm btn-danger">X</button></td></tr>`).join(''); }
-        async function saveSeason() { 
-            showLoading('Saving...'); 
-            await apiCall({ action:'saveSeason', start:document.getElementById('s-start').value, end:document.getElementById('s-end').value, limit:document.getElementById('s-limit').value}); 
-            await refreshData(); // Force refresh to update table
-            hideLoading(); 
-        }
-        async function delSet(i) { 
-            if(confirm('Delete?')) { 
-                showLoading(); await apiCall({action:'deleteSetting', index:i}); 
-                await refreshData(); // Force refresh
-                hideLoading(); 
-            } 
-        }
+        async function saveSeason() { showLoading('Saving...'); await apiCall({ action:'saveSeason', start:document.getElementById('s-start').value, end:document.getElementById('s-end').value, limit:document.getElementById('s-limit').value}); await refreshData(); hideLoading(); }
+        async function delSet(i) { if(confirm('Delete?')) { showLoading(); await apiCall({action:'deleteSetting', index:i}); await refreshData(); hideLoading(); } }
     </script>
 </body>
 </html>
-   
