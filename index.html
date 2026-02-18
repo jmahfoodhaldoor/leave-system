@@ -421,12 +421,46 @@
         async function adminAct(id, act) { if(!(await Swal.fire({title:act+'?',icon:'question',showCancelButton:true})).isConfirmed) return; showLoading('Processing...'); await apiCall({action:'adminAction',id,act,notes:''}); await refreshData(); hideLoading(); }
         async function loadEmployees() { try { const res = await apiCall({action:'getAllEmployees'}); if(res.success) document.getElementById('tb-employees').innerHTML = res.employees.map(e => `<tr><td>${e.name}</td><td>${e.username}</td><td>${e.role}</td><td>${e.email}</td><td>${e.balance}</td><td><button onclick="openBalModal('${e.username}',${e.balance})" class="btn btn-sm btn-outline-warning">Edit</button></td></tr>`).join(''); } catch(e){} }
         
-        function openAddEmpModal() { document.getElementById('e-name').value=''; new bootstrap.Modal(document.getElementById('empModal')).show(); }
+        function openAddEmpModal() { 
+            document.getElementById('e-name').value=''; 
+            document.getElementById('e-user').value=''; 
+            document.getElementById('e-pass').value='';
+            document.getElementById('e-mail').value='';
+            document.getElementById('e-role').value='Employee';
+            document.getElementById('e-bal').value='20';
+            new bootstrap.Modal(document.getElementById('empModal')).show(); 
+        }
+        
+        // 🔴🔴🔴 FIXED: استخدام e-mail بدل e-email 🔴🔴🔴
         async function addEmployee() { 
-            const emp={name:document.getElementById('e-name').value, username:document.getElementById('e-user').value, password:document.getElementById('e-pass').value, email:document.getElementById('e-email').value, role:document.getElementById('e-role').value, balance:document.getElementById('e-bal').value}; 
-            showLoading('Saving...'); bootstrap.Modal.getInstance(document.getElementById('empModal')).hide();
-            await apiCall({action:'addEmployee', employee:emp}); 
-            await refreshData(); 
+            const emp = {
+                name: document.getElementById('e-name').value.trim(), 
+                username: document.getElementById('e-user').value.trim(), 
+                password: document.getElementById('e-pass').value, 
+                email: document.getElementById('e-mail').value.trim(),  // ✅ FIXED
+                role: document.getElementById('e-role').value, 
+                balance: document.getElementById('e-bal').value
+            }; 
+            
+            if (!emp.name || !emp.username || !emp.password) {
+                return Swal.fire('Error', 'Required fields missing', 'error');
+            }
+            
+            showLoading('Saving...'); 
+            bootstrap.Modal.getInstance(document.getElementById('empModal')).hide();
+            
+            try {
+                const res = await apiCall({action:'addEmployee', employee:emp});
+                if (res.success) {
+                    await refreshData(); 
+                    Swal.fire('Success', 'Employee added', 'success');
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Error', 'Failed to add employee', 'error');
+            }
+            
             hideLoading(); 
         }
         
