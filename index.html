@@ -500,6 +500,7 @@
     <script>
         let DATA = { user: {}, settings: [], approvedRequests: [], myRequests: [], teamLeaves: [] };
         let calendarObj = null;
+        let USER_PASSWORD = null; // 🔴 حفظ كلمة المرور
 
         function showLoading(text) {
             document.getElementById('loading-overlay').classList.remove('hidden');
@@ -531,6 +532,7 @@
                 const res = await apiCall({ action: 'login', username: u, password: p });
                 if (res.success) { 
                     DATA = res; 
+                    USER_PASSWORD = p; // 🔴 حفظ كلمة المرور
                     DATA.settings = DATA.settings || []; 
                     DATA.approvedRequests = DATA.approvedRequests || []; 
                     DATA.teamLeaves = DATA.teamLeaves || [];
@@ -1101,6 +1103,9 @@
                     // 🔴 انتظر refreshData يخلص تماماً
                     await refreshData();
                     
+                    // 🔴 delay صغير عشان نتأكد DATA تحدثت
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
                     // 🔴 بعدين حدّث الواجهة
                     renderSettings();
                     
@@ -1161,6 +1166,9 @@
                     // 🔴 انتظر refreshData يخلص تماماً
                     await refreshData();
                     
+                    // 🔴 delay صغير عشان نتأكد DATA تحدثت
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
                     // 🔴 بعدين حدّث الواجهة
                     renderSettings();
                     
@@ -1210,6 +1218,9 @@
                     // 🔴 انتظر refreshData يخلص تماماً
                     await refreshData();
                     
+                    // 🔴 delay صغير عشان نتأكد DATA تحدثت
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
                     // 🔴 بعدين حدّث الواجهة
                     renderSettings();
                     
@@ -1245,7 +1256,7 @@
                 const res = await apiCall({ 
                     action: 'login', 
                     username: DATA.user.username, 
-                    password: 'refresh' 
+                    password: USER_PASSWORD // 🔴 استخدم كلمة المرور الحقيقية
                 });
                 
                 if (res.success) {
