@@ -663,14 +663,27 @@
         function getDailyLimit(d) {
             const sea = (DATA.settings || []).filter(s => s.type === 'Season');
             for (let rule of sea) {
-                if (d >= rule.start && d <= rule.end) return rule.limit;
+                // 🔴 مقارنة صحيحة للتواريخ (string comparison works for yyyy-MM-dd)
+                // لكن نتأكد من التنسيق
+                const dateStr = d.toString();
+                const startStr = rule.start.toString();
+                const endStr = rule.end.toString();
+                
+                if (dateStr >= startStr && dateStr <= endStr) {
+                    return rule.limit;
+                }
             }
             const def = (DATA.settings || []).find(s => s.type === 'Default');
             return def ? def.limit : 2;
         }
 
         function getApprovedCount(d) {
-            return (DATA.approvedRequests || []).filter(r => d >= r.start && d <= r.end).length;
+            return (DATA.approvedRequests || []).filter(r => {
+                const dateStr = d.toString();
+                const startStr = r.start.toString();
+                const endStr = r.end.toString();
+                return dateStr >= startStr && dateStr <= endStr;
+            }).length;
         }
 
         function openReqModal(date) {
@@ -1029,18 +1042,24 @@
         }
 
         function renderSettings() {
+            console.log('🎨 Rendering settings...');
+            
             const seasons = (DATA.settings || []).filter(x => x.type === 'Season');
             const tbody = document.getElementById('tb-settings');
             
             // Update current default limit display
             const defaultSetting = (DATA.settings || []).find(x => x.type === 'Default');
             if (defaultSetting) {
+                console.log('📊 Default limit:', defaultSetting.limit);
                 document.getElementById('current-default').textContent = defaultSetting.limit;
                 document.getElementById('default-limit').value = defaultSetting.limit;
             } else {
+                console.log('📊 Using default: 2');
                 document.getElementById('current-default').textContent = '2 (default)';
                 document.getElementById('default-limit').value = '2';
             }
+            
+            console.log('🗓️ Seasonal rules count:', seasons.length);
             
             if (seasons.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No seasonal rules defined</td></tr>';
@@ -1059,6 +1078,8 @@
                     </td>
                 </tr>
             `).join('');
+            
+            console.log('✅ Settings rendered');
         }
         
         async function updateDefaultLimit() {
@@ -1077,8 +1098,19 @@
                 });
                 
                 if (res.success) {
+                    // 🔴 انتظر refreshData يخلص تماماً
                     await refreshData();
+                    
+                    // 🔴 بعدين حدّث الواجهة
                     renderSettings();
+                    
+                    // 🔴 حدّث Calendar أيضاً (عشان الألوان)
+                    if (calendarObj) {
+                        calendarObj.refetchEvents();
+                        calendarObj.render();
+                    }
+                    
+                    hideLoading();
                     
                     Swal.fire({
                         icon: 'success',
@@ -1088,13 +1120,13 @@
                         showConfirmButton: false
                     });
                 } else {
+                    hideLoading();
                     Swal.fire('Error', res.message, 'error');
                 }
             } catch (e) {
+                hideLoading();
                 Swal.fire('Error', 'Failed to update', 'error');
             }
-            
-            hideLoading();
         }
 
         async function saveSeason() {
@@ -1106,27 +1138,55 @@
                 return Swal.fire('Missing Fields', 'All fields are required', 'error');
             }
             
+            if (new Date(end) < new Date(start)) {
+                return Swal.fire('Invalid Dates', 'End date must be after start date', 'error');
+            }
+            
             showLoading('Saving rule...');
             
             try {
-                await apiCall({ 
+                const res = await apiCall({ 
                     action: 'saveSeason', 
                     start: start, 
                     end: end, 
                     limit: limit 
                 });
                 
-                Swal.fire('Success', 'Rule added', 'success');
-                document.getElementById('s-start').value = '';
-                document.getElementById('s-end').value = '';
-                document.getElementById('s-limit').value = '';
-                await refreshData();
-                renderSettings(); // 🔴 إضافة هذا السطر
+                if (res.success) {
+                    // Clear form
+                    document.getElementById('s-start').value = '';
+                    document.getElementById('s-end').value = '';
+                    document.getElementById('s-limit').value = '';
+                    
+                    // 🔴 انتظر refreshData يخلص تماماً
+                    await refreshData();
+                    
+                    // 🔴 بعدين حدّث الواجهة
+                    renderSettings();
+                    
+                    // 🔴 حدّث Calendar أيضاً (عشان الألوان)
+                    if (calendarObj) {
+                        calendarObj.refetchEvents();
+                        calendarObj.render();
+                    }
+                    
+                    hideLoading();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Rule Added!',
+                        text: 'Seasonal rule has been saved',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    hideLoading();
+                    Swal.fire('Error', res.message, 'error');
+                }
             } catch (e) {
+                hideLoading();
                 Swal.fire('Error', 'Failed to save', 'error');
             }
-            
-            hideLoading();
         }
 
         async function delSet(i) {
@@ -1144,19 +1204,44 @@
             showLoading('Deleting...');
             
             try {
-                await apiCall({ action: 'deleteSetting', index: i });
-                Swal.fire('Deleted', 'Rule removed', 'success');
-                await refreshData();
-                renderSettings(); // 🔴 إضافة هذا السطر
+                const res = await apiCall({ action: 'deleteSetting', index: i });
+                
+                if (res.success) {
+                    // 🔴 انتظر refreshData يخلص تماماً
+                    await refreshData();
+                    
+                    // 🔴 بعدين حدّث الواجهة
+                    renderSettings();
+                    
+                    // 🔴 حدّث Calendar أيضاً (عشان الألوان)
+                    if (calendarObj) {
+                        calendarObj.refetchEvents();
+                        calendarObj.render();
+                    }
+                    
+                    hideLoading();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: 'Rule has been removed',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    hideLoading();
+                    Swal.fire('Error', res.message, 'error');
+                }
             } catch (e) {
+                hideLoading();
                 Swal.fire('Error', 'Failed to delete', 'error');
             }
-            
-            hideLoading();
         }
 
         async function refreshData() {
             try {
+                console.log('🔄 Refreshing data...');
+                
                 const res = await apiCall({ 
                     action: 'login', 
                     username: DATA.user.username, 
@@ -1164,6 +1249,8 @@
                 });
                 
                 if (res.success) {
+                    console.log('✅ Data refreshed successfully');
+                    
                     DATA = res;
                     DATA.settings = DATA.settings || [];
                     DATA.approvedRequests = DATA.approvedRequests || [];
@@ -1193,11 +1280,18 @@
                     // 🔴 إذا المستخدم في صفحة Settings، نحدّث الجدول
                     const currentPage = document.querySelector('.page-section:not(.hidden)');
                     if (currentPage && currentPage.id === 'page-settings') {
+                        console.log('🔄 Updating settings display...');
                         renderSettings();
                     }
+                    
+                    return true;
+                } else {
+                    console.error('❌ Refresh failed:', res.message);
+                    return false;
                 }
             } catch (e) {
-                console.error('Refresh failed:', e);
+                console.error('❌ Refresh error:', e);
+                return false;
             }
         }
     </script>
