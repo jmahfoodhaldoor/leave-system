@@ -317,8 +317,25 @@
                 initialView: 'dayGridMonth', height: 550, headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 dateClick: (info) => {
                     const today = getLocalISODate(new Date());
-                    if (info.dateStr < today) return Swal.fire('','Past Date','warning');
-                    if (getDailyLimit(info.dateStr) === 0 || getApprovedCount(info.dateStr) >= getDailyLimit(info.dateStr)) return Swal.fire('','Full','error');
+                    
+                    // 🔴 فحص 1: تاريخ ماضي
+                    if (info.dateStr < today) {
+                        return Swal.fire('Past Date', 'Cannot select past dates', 'warning');
+                    }
+                    
+                    // 🔴 فحص 2: اليوم ممنوع أو ممتلئ
+                    const limit = getDailyLimit(info.dateStr);
+                    const count = getApprovedCount(info.dateStr);
+                    
+                    if (limit === 0) {
+                        return Swal.fire('Blocked', 'This date is blocked by admin', 'error');
+                    }
+                    
+                    if (count >= limit) {
+                        return Swal.fire('Full', `Maximum ${limit} employees allowed. Currently ${count} approved.`, 'error');
+                    }
+                    
+                    // ✅ اليوم متاح - فتح Modal
                     openReqModal(info.dateStr);
                 },
                 dayCellClassNames: (arg) => {
@@ -380,18 +397,64 @@
             };
             const fileInput = document.getElementById('m-file');
             
-            if (new Date(form.end) < new Date(form.start)) return Swal.fire('Error', 'Invalid dates', 'error');
+            // 🔴 فحص 1: التواريخ صحيحة
+            if (new Date(form.end) < new Date(form.start)) {
+                return Swal.fire('Invalid Dates', 'End date must be after start date', 'error');
+            }
+            
+            // 🔴 فحص 2: التاريخ المطلوب متاح (منع التلاعب)
+            const today = getLocalISODate(new Date());
+            if (form.start < today) {
+                return Swal.fire('Past Date', 'Cannot request past dates', 'error');
+            }
+            
+            // 🔴 فحص 3: فحص كل يوم في الفترة
+            const startDate = new Date(form.start);
+            const endDate = new Date(form.end);
+            const blockedDays = [];
+            
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const dateStr = getLocalISODate(d);
+                const limit = getDailyLimit(dateStr);
+                const count = getApprovedCount(dateStr);
+                
+                if (limit === 0) {
+                    blockedDays.push(dateStr + ' (Blocked by admin)');
+                } else if (count >= limit) {
+                    blockedDays.push(dateStr + ` (Full: ${count}/${limit})`);
+                }
+            }
+            
+            if (blockedDays.length > 0) {
+                return Swal.fire({
+                    icon: 'error',
+                    title: 'Cannot Submit',
+                    html: `<strong>The following dates are not available:</strong><br><br>${blockedDays.join('<br>')}`,
+                    confirmButtonText: 'OK'
+                });
+            }
 
+            // 🔴 فحص 4: قاعدة الـ 48 ساعة
             if (['Annual', 'Unpaid', 'Maternity', 'Paternity'].includes(form.type)) {
-                const today = new Date(); today.setHours(0,0,0,0);
-                const minDate = new Date(today); minDate.setDate(today.getDate() + 2);
-                if (new Date(form.start) < minDate) return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
+                const todayObj = new Date(); todayObj.setHours(0,0,0,0);
+                const minDate = new Date(todayObj); minDate.setDate(todayObj.getDate() + 2);
+                if (new Date(form.start) < minDate) {
+                    return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
+                }
             }
 
+            // 🔴 فحص 5: Medical leave - تأكيد Backup
             if (form.type === 'Medical') {
-                if(!(await Swal.fire({ title: 'Backup?', text: 'Coordinate with backup?', icon:'question', showCancelButton:true, confirmButtonText:'Yes' })).isConfirmed) return;
+                if(!(await Swal.fire({ 
+                    title: 'Backup Coordinator', 
+                    text: 'Have you coordinated with your backup?', 
+                    icon:'question', 
+                    showCancelButton:true, 
+                    confirmButtonText:'Yes, I have' 
+                })).isConfirmed) return;
             }
 
+            // ✅ كل الفحوصات نجحت - رفع الملف
             let fileData = null;
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
@@ -402,7 +465,9 @@
                     fileData = { name: file.name, type: file.type, data: reader.result };
                     submitData(form, fileData);
                 };
-            } else { submitData(form, null); }
+            } else { 
+                submitData(form, null); 
+            }
         }
 
         async function submitData(form, fileData) {
