@@ -664,14 +664,19 @@
         /* ─── Admin Requests ──────────────────────────────────── */
         function renderAdminRequests() {
             document.getElementById('tb-admin-req').innerHTML = (DATA.allRequests || []).map(r => {
-                // Build action buttons — exclude current status
+                const today   = getLocalISODate(new Date());
+                const started = r.start <= today;
+                const ended   = r.end   <  today;
+
                 const actions = [];
-                if (r.status !== 'Approved')
-                    actions.push(`<button onclick="adminChangeStatus('${r.id}','Approved')" class="btn btn-sm btn-success" title="Approve"><i class="fas fa-check"></i></button>`);
-                if (r.status !== 'Rejected')
-                    actions.push(`<button onclick="adminChangeStatus('${r.id}','Rejected')" class="btn btn-sm btn-warning" title="Reject"><i class="fas fa-ban"></i></button>`);
-                if (r.status !== 'Cancelled')
-                    actions.push(`<button onclick="adminChangeStatus('${r.id}','Cancelled')" class="btn btn-sm btn-danger" title="Cancel"><i class="fas fa-times"></i></button>`);
+                if (!ended) {
+                    if (r.status !== 'Approved')
+                        actions.push(`<button onclick="adminChangeStatus('${r.id}','Approved')" class="btn btn-sm btn-success" title="Approve"><i class="fas fa-check"></i></button>`);
+                    if (r.status !== 'Rejected')
+                        actions.push(`<button onclick="adminChangeStatus('${r.id}','Rejected')" class="btn btn-sm btn-warning" title="Reject"><i class="fas fa-ban"></i></button>`);
+                    if (!started && r.status !== 'Cancelled')
+                        actions.push(`<button onclick="adminChangeStatus('${r.id}','Cancelled')" class="btn btn-sm btn-danger" title="Cancel"><i class="fas fa-times"></i></button>`);
+                }
 
                 return `<tr>
                     <td><strong>${r.name}</strong><br><small class="text-muted">${r.username}</small></td>
