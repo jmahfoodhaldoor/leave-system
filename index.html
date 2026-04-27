@@ -45,10 +45,10 @@
         .card-custom { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 24px; border: 1px solid #e2e8f0; }
         .stat-card { background: white; padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .badge-status { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
-        .bg-pending { background: #fef3c7; color: #92400e; }
-        .bg-approved { background: #d1fae5; color: #065f46; }
-        .bg-rejected { background: #fee2e2; color: #991b1b; }
-        /* 🔴 NEW: Cancelled badge */
+        .bg-pending   { background: #fef3c7; color: #92400e; }
+        .bg-approved  { background: #d1fae5; color: #065f46; }
+        .bg-rejected  { background: #fee2e2; color: #991b1b; }
+        /* 🆕 Cancelled status */
         .bg-cancelled { background: #f1f5f9; color: #64748b; }
         
         .fc-daygrid-day { cursor: pointer; transition: 0.2s; }
@@ -60,9 +60,6 @@
 
         #view-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
         .login-box { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-
-        /* 🔴 NEW: Status select in admin table */
-        .status-select { font-size: 0.75rem; padding: 3px 6px; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; }
 
         @media (max-width: 768px) {
             .sidebar { left: -100%; box-shadow: 5px 0 15px rgba(0,0,0,0.2); }
@@ -76,14 +73,22 @@
 </head>
 <body>
 
-    <div id="loading-overlay" class="hidden"><div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div><div class="loading-text">Loading...</div></div>
+    <div id="loading-overlay" class="hidden">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
     
     <button id="mobile-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars fa-lg"></i></button>
     <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
+    <!-- LOGIN -->
     <div id="view-login">
         <div class="login-box">
-            <div class="text-center mb-4"><i class="fas fa-cubes fa-3x text-primary mb-3"></i><h4 class="fw-bold">Depot Dispatcher</h4><p class="text-muted small">Dispatcher's Leave Portal</p></div>
+            <div class="text-center mb-4">
+                <i class="fas fa-cubes fa-3x text-primary mb-3"></i>
+                <h4 class="fw-bold">Depot Dispatcher</h4>
+                <p class="text-muted small">Dispatcher's Leave Portal</p>
+            </div>
             <form onsubmit="event.preventDefault(); doLogin();">
                 <div class="mb-3"><label class="small fw-bold">Username</label><input type="text" id="login-user" class="form-control" required></div>
                 <div class="mb-4"><label class="small fw-bold">Password</label><input type="password" id="login-pass" class="form-control" required></div>
@@ -92,10 +97,20 @@
         </div>
     </div>
 
+    <!-- APP -->
     <div id="view-app" class="hidden">
         <div class="sidebar" id="sidebar">
-            <div class="d-flex justify-content-between align-items-center mb-4"><h5 class="fw-bold mb-0"><i class="fas fa-cubes me-2"></i> Depot Portal</h5><button class="btn btn-sm btn-outline-light d-md-none" onclick="toggleSidebar()"><i class="fas fa-times"></i></button></div>
-            <div class="mb-4 p-3 rounded bg-white bg-opacity-10"><div class="fw-bold" id="u-name">User</div><small class="text-white-50" id="u-role">Role</small><div id="balance-badge" class="mt-2 hidden"><span class="badge bg-success"><i class="fas fa-calendar-check me-1"></i> <span id="u-balance">0</span> Days</span></div></div>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0"><i class="fas fa-cubes me-2"></i> Depot Portal</h5>
+                <button class="btn btn-sm btn-outline-light d-md-none" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="mb-4 p-3 rounded bg-white bg-opacity-10">
+                <div class="fw-bold" id="u-name">User</div>
+                <small class="text-white-50" id="u-role">Role</small>
+                <div id="balance-badge" class="mt-2 hidden">
+                    <span class="badge bg-success"><i class="fas fa-calendar-check me-1"></i> <span id="u-balance">0</span> Days</span>
+                </div>
+            </div>
             <nav>
                 <div class="nav-link active" onclick="nav('home')"><i class="fas fa-home"></i> Dashboard</div>
                 <div id="menu-emp" class="hidden">
@@ -109,17 +124,21 @@
                     <div class="nav-link" onclick="nav('settings')"><i class="fas fa-cog"></i> Settings</div>
                 </div>
             </nav>
-            <div class="mt-auto pt-5"><button onclick="location.reload()" class="btn btn-outline-light w-100 btn-sm"><i class="fas fa-sign-out-alt me-2"></i> Logout</button></div>
+            <div class="mt-auto pt-5">
+                <button onclick="location.reload()" class="btn btn-outline-light w-100 btn-sm"><i class="fas fa-sign-out-alt me-2"></i> Logout</button>
+            </div>
         </div>
 
         <div class="main-content">
+
+            <!-- DASHBOARD -->
             <div id="page-home" class="page-section">
                 <h3 class="fw-bold mb-4">Dashboard</h3>
                 <div id="admin-stats" class="row g-4 mb-4 hidden">
                     <div class="col-md-3"><div class="stat-card"><h2 class="fw-bold mb-1" id="st-total">0</h2><small class="text-muted">Total</small></div></div>
-                    <div class="col-md-3"><div class="stat-card" style="border-left-color: #f59e0b"><h2 class="fw-bold mb-1" id="st-pending">0</h2><small class="text-muted">Pending</small></div></div>
-                    <div class="col-md-3"><div class="stat-card" style="border-left-color: #10b981"><h2 class="fw-bold mb-1" id="st-approved">0</h2><small class="text-muted">Approved</small></div></div>
-                    <div class="col-md-3"><div class="stat-card" style="border-left-color: #ef4444"><h2 class="fw-bold mb-1" id="st-rejected">0</h2><small class="text-muted">Rejected</small></div></div>
+                    <div class="col-md-3"><div class="stat-card" style="border-left-color:#f59e0b"><h2 class="fw-bold mb-1" id="st-pending">0</h2><small class="text-muted">Pending</small></div></div>
+                    <div class="col-md-3"><div class="stat-card" style="border-left-color:#10b981"><h2 class="fw-bold mb-1" id="st-approved">0</h2><small class="text-muted">Approved</small></div></div>
+                    <div class="col-md-3"><div class="stat-card" style="border-left-color:#ef4444"><h2 class="fw-bold mb-1" id="st-rejected">0</h2><small class="text-muted">Rejected</small></div></div>
                 </div>
                 <div class="card-custom">
                     <h6 class="fw-bold mb-3"><i class="fas fa-calendar-day me-2 text-primary"></i> Who's On Leave Today?</h6>
@@ -127,62 +146,189 @@
                 </div>
             </div>
 
+            <!-- NEW REQUEST -->
             <div id="page-new-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">New Request</h3>
                 <div class="row">
-                    <div class="col-md-8"><div class="card-custom"><div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> <strong>Legend:</strong> Red = Full | Yellow = Limited | White = Available</div><div id="calendar"></div></div></div>
-                    <div class="col-md-4"><div class="card-custom bg-primary text-white"><h5 class="mb-3">Your Balance</h5><h2 class="display-4 fw-bold mb-0" id="disp-balance">0</h2><small>Days Available</small></div></div>
+                    <div class="col-md-8">
+                        <div class="card-custom">
+                            <div class="alert alert-info small mb-3"><i class="fas fa-info-circle me-2"></i> <strong>Legend:</strong> Red = Full | Yellow = Limited | White = Available</div>
+                            <div id="calendar"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card-custom bg-primary text-white"><h5 class="mb-3">Your Balance</h5><h2 class="display-4 fw-bold mb-0" id="disp-balance">0</h2><small>Days Available</small></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- 🔴 My History: added Cancel column -->
+            <!-- MY HISTORY — 🆕 added Action column -->
             <div id="page-my-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">My History</h3>
-                <div class="card-custom"><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>Date</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>Notes</th><th>File</th><th>Action</th></tr></thead><tbody id="tb-my-req"></tbody></table></div></div>
+                <div class="card-custom">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Period</th>
+                                    <th>Days</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                    <th>File</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tb-my-req"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
-            <!-- 🔴 Admin Requests: added Status Change column -->
+            <!-- ADMIN REQUESTS — 🆕 status change buttons for all states -->
             <div id="page-admin-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">Manage Requests</h3>
-                <div class="card-custom"><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>Employee</th><th>Type</th><th>Period</th><th>Days</th><th>Status</th><th>File</th><th>Approve/Reject</th><th>Change Status</th></tr></thead><tbody id="tb-admin-req"></tbody></table></div></div>
+                <div class="card-custom">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Type</th>
+                                    <th>Period</th>
+                                    <th>Days</th>
+                                    <th>Status</th>
+                                    <th>File</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tb-admin-req"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
+            <!-- EMPLOYEES -->
             <div id="page-employees" class="page-section hidden">
-                <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold">Employees</h3><button onclick="openAddEmpModal()" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Add</button></div>
-                <div class="card-custom"><div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>Name</th><th>ID</th><th>Role</th><th>Email</th><th>Balance</th><th>Action</th></tr></thead><tbody id="tb-employees"></tbody></table></div></div>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold">Employees</h3>
+                    <button onclick="openAddEmpModal()" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Add</button>
+                </div>
+                <div class="card-custom">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light"><tr><th>Name</th><th>ID</th><th>Role</th><th>Email</th><th>Balance</th><th>Action</th></tr></thead>
+                            <tbody id="tb-employees"></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
+            <!-- SETTINGS -->
             <div id="page-settings" class="page-section hidden">
                 <h3 class="fw-bold mb-4">Settings</h3>
                 <div class="row">
-                    <div class="col-md-5"><div class="card-custom"><h6 class="fw-bold mb-3">Add Seasonal Rule</h6><input type="date" id="s-start" class="form-control mb-2"><input type="date" id="s-end" class="form-control mb-2"><input type="number" id="s-limit" class="form-control mb-3" placeholder="Limit" min="0"><button onclick="saveSeason()" class="btn btn-dark w-100">Add Rule</button></div></div>
-                    <div class="col-md-7"><div class="card-custom"><div class="table-responsive"><table class="table table-sm"><thead><tr><th>Start</th><th>End</th><th>Limit</th><th>Action</th></tr></thead><tbody id="tb-settings"></tbody></table></div></div></div>
+                    <div class="col-md-5">
+                        <div class="card-custom">
+                            <h6 class="fw-bold mb-3">Add Seasonal Rule</h6>
+                            <input type="date" id="s-start" class="form-control mb-2">
+                            <input type="date" id="s-end" class="form-control mb-2">
+                            <input type="number" id="s-limit" class="form-control mb-3" placeholder="Limit" min="0">
+                            <button onclick="saveSeason()" class="btn btn-dark w-100">Add Rule</button>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <div class="card-custom">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead><tr><th>Start</th><th>End</th><th>Limit</th><th>Action</th></tr></thead>
+                                    <tbody id="tb-settings"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
 
-    <!-- Request Modal -->
+    <!-- REQUEST MODAL -->
     <div class="modal fade" id="reqModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold">Submit Leave Request</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <div class="mb-3"><label class="small fw-bold">Type</label><select id="m-type" class="form-select" onchange="updateModalUI()"><option value="Annual">Annual Leave</option><option value="Medical">Medical Leave</option><option value="Maternity">Maternity Leave</option><option value="Paternity">Paternity Leave</option><option value="Unpaid">Unpaid Leave</option></select></div>
+                    <div class="mb-3"><label class="small fw-bold">Type</label>
+                        <select id="m-type" class="form-select" onchange="updateModalUI()">
+                            <option value="Annual">Annual Leave</option>
+                            <option value="Medical">Medical Leave</option>
+                            <option value="Maternity">Maternity Leave</option>
+                            <option value="Paternity">Paternity Leave</option>
+                            <option value="Unpaid">Unpaid Leave</option>
+                        </select>
+                    </div>
                     <div id="medical-warning" class="alert alert-warning small mb-3 hidden"><i class="fas fa-exclamation-triangle me-2"></i> Please coordinate with your <strong>backup</strong>.</div>
-                    <div class="row g-2 mb-3"><div class="col"><label class="small fw-bold" id="label-start">Start</label><input type="date" id="m-start" class="form-control" readonly></div><div class="col"><label class="small fw-bold">End</label><input type="date" id="m-end" class="form-control" onchange="calcDays()"></div></div>
+                    <div class="row g-2 mb-3">
+                        <div class="col"><label class="small fw-bold" id="label-start">Start</label><input type="date" id="m-start" class="form-control" readonly></div>
+                        <div class="col"><label class="small fw-bold">End</label><input type="date" id="m-end" class="form-control" onchange="calcDays()"></div>
+                    </div>
                     <div class="mb-3"><label class="small fw-bold">Attachment</label><input type="file" id="m-file" class="form-control" accept="image/*,.pdf"><small class="text-muted">Max 5MB</small></div>
                     <div class="mb-3"><label class="small fw-bold">Notes</label><textarea id="m-notes" class="form-control" rows="2"></textarea></div>
-                    <div class="alert alert-secondary py-2 d-flex justify-content-between mb-0"><span>Days: <strong id="req-days">0</strong></span><span>Balance: <strong id="req-bal">0</strong></span></div>
+                    <div class="alert alert-secondary py-2 d-flex justify-content-between mb-0">
+                        <span>Days: <strong id="req-days">0</strong></span>
+                        <span>Balance: <strong id="req-bal">0</strong></span>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 pt-0"><button onclick="sendReq()" class="btn btn-primary"><i class="fas fa-paper-plane me-2"></i> Submit</button></div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="empModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Add Employee</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="e-name" class="form-control mb-2" placeholder="Full Name"><input type="text" id="e-user" class="form-control mb-2" placeholder="Username (ID)"><input type="password" id="e-pass" class="form-control mb-2" placeholder="Password"><input type="email" id="e-mail" class="form-control mb-2" placeholder="Email"><select id="e-role" class="form-select mb-2"><option value="Employee">Employee</option><option value="Admin">Admin</option></select><input type="number" id="e-bal" class="form-control mb-2" placeholder="Balance" value="20"></div><div class="modal-footer border-0"><button onclick="addEmployee()" class="btn btn-primary">Save</button></div></div></div></div>
-    <div class="modal fade" id="balModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Update Balance</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="hidden" id="eb-user"><label class="small fw-bold">New Balance</label><input type="number" id="eb-val" class="form-control" step="0.5"></div><div class="modal-footer border-0"><button onclick="saveBalance()" class="btn btn-success">Update</button></div></div></div></div>
-    <div class="modal fade" id="passModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0 shadow-lg"><div class="modal-header border-0"><h5 class="modal-title fw-bold">Change Password</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="password" id="old-pass" class="form-control mb-3" placeholder="Current Password"><input type="password" id="new-pass" class="form-control mb-3" placeholder="New Password"><input type="password" id="confirm-pass" class="form-control" placeholder="Confirm New Password"></div><div class="modal-footer border-0"><button onclick="changePassword()" class="btn btn-primary">Save</button></div></div></div></div>
+    <!-- ADD EMPLOYEE MODAL -->
+    <div class="modal fade" id="empModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0"><h5 class="modal-title fw-bold">Add Employee</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="text"     id="e-name" class="form-control mb-2" placeholder="Full Name">
+                    <input type="text"     id="e-user" class="form-control mb-2" placeholder="Username (ID)">
+                    <input type="password" id="e-pass" class="form-control mb-2" placeholder="Password">
+                    <input type="email"    id="e-mail" class="form-control mb-2" placeholder="Email">
+                    <select id="e-role" class="form-select mb-2"><option value="Employee">Employee</option><option value="Admin">Admin</option></select>
+                    <input type="number"   id="e-bal"  class="form-control mb-2" placeholder="Balance" value="20">
+                </div>
+                <div class="modal-footer border-0"><button onclick="addEmployee()" class="btn btn-primary">Save</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BALANCE MODAL -->
+    <div class="modal fade" id="balModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0"><h5 class="modal-title fw-bold">Update Balance</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><input type="hidden" id="eb-user"><label class="small fw-bold">New Balance</label><input type="number" id="eb-val" class="form-control" step="0.5"></div>
+                <div class="modal-footer border-0"><button onclick="saveBalance()" class="btn btn-success">Update</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PASSWORD MODAL -->
+    <div class="modal fade" id="passModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0"><h5 class="modal-title fw-bold">Change Password</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="password" id="old-pass"     class="form-control mb-3" placeholder="Current Password">
+                    <input type="password" id="new-pass"     class="form-control mb-3" placeholder="New Password">
+                    <input type="password" id="confirm-pass" class="form-control"       placeholder="Confirm New Password">
+                </div>
+                <div class="modal-footer border-0"><button onclick="changePassword()" class="btn btn-primary">Save</button></div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -191,36 +337,43 @@
         let calendarObj = null;
         let CURRENT_PASSWORD = "";
 
+        /* ─── Helpers ─────────────────────────────────────────── */
         function getLocalISODate(date) {
             const offset = date.getTimezoneOffset() * 60000;
-            const localDate = new Date(date.getTime() - offset);
-            return localDate.toISOString().split('T')[0];
+            return new Date(date.getTime() - offset).toISOString().split('T')[0];
         }
-
-        function showLoading(text) { document.getElementById('loading-overlay').classList.remove('hidden'); if(text) document.querySelector('.loading-text').textContent=text; }
+        function showLoading(text) {
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            if (text) document.querySelector('.loading-text').textContent = text;
+        }
         function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
-        function toggleSidebar() { 
-            document.querySelector('.sidebar').classList.toggle('active'); 
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
             document.getElementById('sidebar-overlay').classList.toggle('active');
         }
-
         async function apiCall(payload) {
-            try { const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) }); if (!res.ok) throw new Error(`HTTP ${res.status}`); return await res.json(); } catch (e) { console.error('API Error:', e); throw e; }
+            try {
+                const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } catch (e) { console.error('API Error:', e); throw e; }
         }
 
+        /* ─── Login ───────────────────────────────────────────── */
         async function doLogin() {
             const u = document.getElementById('login-user').value.trim();
             const p = document.getElementById('login-pass').value.trim();
-            if(!u || !p) return Swal.fire('Error', 'Required fields', 'error');
+            if (!u || !p) return Swal.fire('Error', 'Required fields', 'error');
             showLoading('Signing in...');
             try {
                 const res = await apiCall({ action: 'login', username: u, password: p });
-                if (res.success) { 
-                    DATA = res; CURRENT_PASSWORD = p;
-                    DATA.settings = DATA.settings || []; 
-                    DATA.approvedRequests = DATA.approvedRequests || []; 
-                    DATA.teamLeaves = DATA.teamLeaves || [];
-                    initApp(); 
+                if (res.success) {
+                    DATA = res;
+                    CURRENT_PASSWORD = p;
+                    DATA.settings         = DATA.settings         || [];
+                    DATA.approvedRequests = DATA.approvedRequests || [];
+                    DATA.teamLeaves       = DATA.teamLeaves       || [];
+                    initApp();
                 } else { Swal.fire('Failed', res.message, 'error'); }
             } catch (e) { Swal.fire('Error', 'Connection Failed', 'error'); }
             hideLoading();
@@ -230,55 +383,66 @@
             document.getElementById('view-login').classList.add('hidden');
             document.getElementById('view-app').classList.remove('hidden');
             const u = DATA.user;
-            document.getElementById('u-name').textContent = u.name;
-            document.getElementById('u-role').textContent = u.role;
+            document.getElementById('u-name').textContent    = u.name;
+            document.getElementById('u-role').textContent    = u.role;
             document.getElementById('u-balance').textContent = u.balance;
             document.getElementById('disp-balance').textContent = u.balance;
             document.getElementById('mobile-menu-btn').style.display = 'block';
+
             if (u.role === 'Admin') {
                 document.getElementById('menu-admin').classList.remove('hidden');
                 document.getElementById('admin-stats').classList.remove('hidden');
-                const pending = (DATA.allRequests||[]).filter(r=>r.status==='Pending').length;
-                if(pending>0) { document.getElementById('badge-pending').textContent=pending; document.getElementById('badge-pending').classList.remove('hidden'); }
+                const pending = (DATA.allRequests || []).filter(r => r.status === 'Pending').length;
+                if (pending > 0) {
+                    document.getElementById('badge-pending').textContent = pending;
+                    document.getElementById('badge-pending').classList.remove('hidden');
+                }
             } else {
                 document.getElementById('menu-emp').classList.remove('hidden');
                 document.getElementById('balance-badge').classList.remove('hidden');
             }
-            renderDashboard(); initCalendar(); nav('home');
+            renderDashboard();
+            initCalendar();
+            nav('home');
         }
 
+        /* ─── Navigation ──────────────────────────────────────── */
         function nav(id) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden'));
             document.getElementById('page-' + id).classList.remove('hidden');
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            if(event && event.target.closest('.nav-link')) event.target.closest('.nav-link').classList.add('active');
+            if (event && event.target.closest('.nav-link')) event.target.closest('.nav-link').classList.add('active');
             document.querySelector('.sidebar').classList.remove('active');
             document.getElementById('sidebar-overlay').classList.remove('active');
-            if(id === 'new-req' && calendarObj) setTimeout(() => calendarObj.updateSize(), 200);
-            if(id === 'my-req') renderMyRequests();
-            if(id === 'admin-req') renderAdminRequests();
-            if(id === 'employees') loadEmployees();
-            if(id === 'settings') renderSettings();
+            if (id === 'new-req' && calendarObj) setTimeout(() => calendarObj.updateSize(), 200);
+            if (id === 'my-req')    renderMyRequests();
+            if (id === 'admin-req') renderAdminRequests();
+            if (id === 'employees') loadEmployees();
+            if (id === 'settings')  renderSettings();
         }
 
+        /* ─── Refresh ─────────────────────────────────────────── */
         async function refreshData() {
             try {
                 const res = await apiCall({ action: 'login', username: DATA.user.username, password: CURRENT_PASSWORD });
                 if (res.success) {
                     DATA = res;
-                    DATA.settings = DATA.settings || []; 
-                    DATA.approvedRequests = DATA.approvedRequests || []; 
-                    DATA.teamLeaves = DATA.teamLeaves || [];
+                    DATA.settings         = DATA.settings         || [];
+                    DATA.approvedRequests = DATA.approvedRequests || [];
+                    DATA.teamLeaves       = DATA.teamLeaves       || [];
+
                     if (DATA.user.role === 'Admin') {
                         renderDashboard();
-                        const pending = (DATA.allRequests||[]).filter(r=>r.status==='Pending').length;
-                        document.getElementById('badge-pending').textContent=pending;
-                        pending > 0 ? document.getElementById('badge-pending').classList.remove('hidden') : document.getElementById('badge-pending').classList.add('hidden');
+                        const pending = (DATA.allRequests || []).filter(r => r.status === 'Pending').length;
+                        document.getElementById('badge-pending').textContent = pending;
+                        pending > 0
+                            ? document.getElementById('badge-pending').classList.remove('hidden')
+                            : document.getElementById('badge-pending').classList.add('hidden');
                         if (!document.getElementById('page-admin-req').classList.contains('hidden')) renderAdminRequests();
                         if (!document.getElementById('page-employees').classList.contains('hidden')) loadEmployees();
-                        if (!document.getElementById('page-settings').classList.contains('hidden')) renderSettings();
+                        if (!document.getElementById('page-settings').classList.contains('hidden'))  renderSettings();
                     } else {
-                        document.getElementById('u-balance').textContent = DATA.user.balance;
+                        document.getElementById('u-balance').textContent    = DATA.user.balance;
                         document.getElementById('disp-balance').textContent = DATA.user.balance;
                         renderDashboard();
                         if (!document.getElementById('page-my-req').classList.contains('hidden')) renderMyRequests();
@@ -288,40 +452,52 @@
             } catch (e) { console.error('Refresh failed:', e); }
         }
 
+        /* ─── Dashboard ───────────────────────────────────────── */
         function renderDashboard() {
             const all = DATA.allRequests || [];
-            document.getElementById('st-total').textContent = all.length;
-            document.getElementById('st-pending').textContent = all.filter(r=>r.status==='Pending').length;
-            document.getElementById('st-approved').textContent = all.filter(r=>r.status==='Approved').length;
-            document.getElementById('st-rejected').textContent = all.filter(r=>r.status==='Rejected').length;
+            document.getElementById('st-total').textContent    = all.length;
+            document.getElementById('st-pending').textContent  = all.filter(r => r.status === 'Pending').length;
+            document.getElementById('st-approved').textContent = all.filter(r => r.status === 'Approved').length;
+            document.getElementById('st-rejected').textContent = all.filter(r => r.status === 'Rejected').length;
+
             const today = getLocalISODate(new Date());
-            const out = (DATA.teamLeaves||[]).filter(l => today >= l.start && today <= l.end);
+            const out   = (DATA.teamLeaves || []).filter(l => today >= l.start && today <= l.end);
             const container = document.getElementById('team-view-container');
-            if (out.length === 0) container.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success p-2">All Present</span>';
-            else container.innerHTML = out.map(o => `<div class="d-flex align-items-center bg-light rounded p-2 border"><div class="bg-primary text-white rounded-circle d-flex center me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div><div style="line-height:1.1"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type}</small></div></div>`).join('');
+            if (out.length === 0) {
+                container.innerHTML = '<span class="badge bg-success bg-opacity-10 text-success p-2">All Present</span>';
+            } else {
+                container.innerHTML = out.map(o => `
+                    <div class="d-flex align-items-center bg-light rounded p-2 border">
+                        <div class="bg-primary text-white rounded-circle d-flex me-2" style="width:30px;height:30px;align-items:center;justify-content:center">${o.name.charAt(0)}</div>
+                        <div style="line-height:1.1"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type}</small></div>
+                    </div>`).join('');
+            }
         }
 
+        /* ─── Calendar ────────────────────────────────────────── */
         function initCalendar() {
             const el = document.getElementById('calendar');
-            if(!el) return;
+            if (!el) return;
             calendarObj = new FullCalendar.Calendar(el, {
-                initialView: 'dayGridMonth', height: 550, headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
+                initialView: 'dayGridMonth', height: 550,
+                headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
                 dateClick: (info) => {
                     const today = getLocalISODate(new Date());
                     if (info.dateStr < today) return Swal.fire('Past Date', 'Cannot select past dates', 'warning');
                     const limit = getDailyLimit(info.dateStr);
                     const count = getApprovedCount(info.dateStr);
-                    if (limit === 0) return Swal.fire('Blocked', 'This date is blocked by admin', 'error');
-                    if (count >= limit) return Swal.fire('Full', `Maximum ${limit} employees allowed. Currently ${count} approved.`, 'error');
+                    if (limit === 0)       return Swal.fire('Blocked', 'This date is blocked by admin', 'error');
+                    if (count >= limit)    return Swal.fire('Full', `Maximum ${limit} employees allowed. Currently ${count} approved.`, 'error');
                     openReqModal(info.dateStr);
                 },
                 dayCellClassNames: (arg) => {
-                    const d = getLocalISODate(arg.date);
+                    const d     = getLocalISODate(arg.date);
                     const today = getLocalISODate(new Date());
                     if (d < today) return ['day-past'];
-                    const lim = getDailyLimit(d); const cnt = getApprovedCount(d);
+                    const lim = getDailyLimit(d);
+                    const cnt = getApprovedCount(d);
                     if (lim === 0 || cnt >= lim) return ['day-blocked'];
-                    if (cnt >= lim - 1) return ['day-limited'];
+                    if (cnt >= lim - 1)          return ['day-limited'];
                     return [];
                 }
             });
@@ -329,276 +505,307 @@
         }
 
         function getDailyLimit(d) {
-            const sea = (DATA.settings||[]).filter(s => s.type === 'Season');
-            for(let rule of sea) if (d >= rule.start && d <= rule.end) return rule.limit;
-            const def = (DATA.settings||[]).find(s => s.type === 'Default');
+            for (let rule of (DATA.settings || []).filter(s => s.type === 'Season'))
+                if (d >= rule.start && d <= rule.end) return rule.limit;
+            const def = (DATA.settings || []).find(s => s.type === 'Default');
             return def ? def.limit : 2;
         }
-        function getApprovedCount(d) { return (DATA.approvedRequests||[]).filter(r => d >= r.start && d <= r.end).length; }
+        function getApprovedCount(d) {
+            return (DATA.approvedRequests || []).filter(r => d >= r.start && d <= r.end).length;
+        }
 
+        /* ─── Request Modal ───────────────────────────────────── */
         function openReqModal(date) {
             document.getElementById('m-start').value = date;
-            document.getElementById('m-end').value = date;
-            document.getElementById('m-type').value = 'Annual';
+            document.getElementById('m-end').value   = date;
+            document.getElementById('m-type').value  = 'Annual';
             document.getElementById('m-notes').value = '';
-            document.getElementById('m-file').value = '';
+            document.getElementById('m-file').value  = '';
             document.getElementById('req-bal').textContent = DATA.user ? DATA.user.balance : 0;
             updateModalUI(); calcDays();
             new bootstrap.Modal(document.getElementById('reqModal')).show();
         }
-
         function updateModalUI() {
             const type = document.getElementById('m-type').value;
-            const warningBox = document.getElementById('medical-warning');
-            const startLabel = document.getElementById('label-start');
-            if (type === 'Medical') warningBox.classList.remove('hidden'); else warningBox.classList.add('hidden');
-            if (type === 'Maternity' || type === 'Paternity') startLabel.innerText = "Expected Start"; else startLabel.innerText = "Start Date";
+            document.getElementById('medical-warning').classList.toggle('hidden', type !== 'Medical');
+            document.getElementById('label-start').innerText =
+                (type === 'Maternity' || type === 'Paternity') ? 'Expected Start' : 'Start Date';
         }
-
         function calcDays() {
             const s = document.getElementById('m-start').value;
             const e = document.getElementById('m-end').value;
-            if(s && e) {
-                const diff = Math.abs(new Date(e) - new Date(s));
-                document.getElementById('req-days').textContent = Math.ceil(diff/(1000*60*60*24)) + 1;
-            }
+            if (s && e) document.getElementById('req-days').textContent =
+                Math.ceil(Math.abs(new Date(e) - new Date(s)) / (1000 * 60 * 60 * 24)) + 1;
         }
 
+        /* ─── Submit Request ──────────────────────────────────── */
         async function sendReq() {
             const form = {
                 username: DATA.user.username, name: DATA.user.name,
-                start: document.getElementById('m-start').value, end: document.getElementById('m-end').value,
-                days: parseFloat(document.getElementById('req-days').textContent),
-                type: document.getElementById('m-type').value, notes: document.getElementById('m-notes').value
+                start: document.getElementById('m-start').value,
+                end:   document.getElementById('m-end').value,
+                days:  parseFloat(document.getElementById('req-days').textContent),
+                type:  document.getElementById('m-type').value,
+                notes: document.getElementById('m-notes').value
             };
             const fileInput = document.getElementById('m-file');
-            if (new Date(form.end) < new Date(form.start)) return Swal.fire('Invalid Dates', 'End date must be after start date', 'error');
+
+            if (new Date(form.end) < new Date(form.start))
+                return Swal.fire('Invalid Dates', 'End date must be after start date', 'error');
+
             const today = getLocalISODate(new Date());
-            if (form.start < today) return Swal.fire('Past Date', 'Cannot request past dates', 'error');
+            if (form.start < today)
+                return Swal.fire('Past Date', 'Cannot request past dates', 'error');
+
             const startDate = new Date(form.start);
-            const endDate = new Date(form.end);
+            const endDate   = new Date(form.end);
             const blockedDays = [];
             for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
                 const dateStr = getLocalISODate(d);
-                const limit = getDailyLimit(dateStr);
-                const count = getApprovedCount(dateStr);
-                if (limit === 0) blockedDays.push(dateStr + ' (Blocked by admin)');
+                const limit   = getDailyLimit(dateStr);
+                const count   = getApprovedCount(dateStr);
+                if (limit === 0)    blockedDays.push(dateStr + ' (Blocked by admin)');
                 else if (count >= limit) blockedDays.push(dateStr + ` (Full: ${count}/${limit})`);
             }
-            if (blockedDays.length > 0) return Swal.fire({ icon: 'error', title: 'Cannot Submit', html: `<strong>The following dates are not available:</strong><br><br>${blockedDays.join('<br>')}`, confirmButtonText: 'OK' });
+            if (blockedDays.length > 0)
+                return Swal.fire({ icon: 'error', title: 'Cannot Submit', html: `<strong>The following dates are not available:</strong><br><br>${blockedDays.join('<br>')}`, confirmButtonText: 'OK' });
+
             if (['Annual', 'Unpaid', 'Maternity', 'Paternity'].includes(form.type)) {
                 const todayObj = new Date(); todayObj.setHours(0,0,0,0);
-                const minDate = new Date(todayObj); minDate.setDate(todayObj.getDate() + 2);
-                if (new Date(form.start) < minDate) return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
+                const minDate  = new Date(todayObj); minDate.setDate(todayObj.getDate() + 2);
+                if (new Date(form.start) < minDate)
+                    return Swal.fire('Notice', 'Must request 48 hours in advance', 'warning');
             }
+
             if (form.type === 'Medical') {
-                if(!(await Swal.fire({ title: 'Backup Coordinator', text: 'Have you coordinated with your backup?', icon:'question', showCancelButton:true, confirmButtonText:'Yes, I have' })).isConfirmed) return;
+                if (!(await Swal.fire({ title: 'Backup Coordinator', text: 'Have you coordinated with your backup?', icon: 'question', showCancelButton: true, confirmButtonText: 'Yes, I have' })).isConfirmed) return;
             }
+
             let fileData = null;
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
                 if (file.size > 5 * 1024 * 1024) return Swal.fire('Error', 'Max file 5MB', 'error');
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
-                reader.onload = async () => { fileData = { name: file.name, type: file.type, data: reader.result }; submitData(form, fileData); };
-            } else { submitData(form, null); }
+                reader.onload = async () => {
+                    fileData = { name: file.name, type: file.type, data: reader.result };
+                    submitData(form, fileData);
+                };
+            } else {
+                submitData(form, null);
+            }
         }
 
         async function submitData(form, fileData) {
             showLoading('Sending...');
             bootstrap.Modal.getInstance(document.getElementById('reqModal')).hide();
             try {
-                const res = await apiCall({ action: 'submitRequest', form: form, fileData: fileData });
-                if (res.success) { Swal.fire('Success', 'Request Sent', 'success'); await refreshData(); } 
+                const res = await apiCall({ action: 'submitRequest', form, fileData });
+                if (res.success) { Swal.fire('Success', 'Request Sent', 'success'); await refreshData(); }
                 else Swal.fire('Error', res.message, 'error');
             } catch (e) { Swal.fire('Error', 'Failed', 'error'); }
             hideLoading();
         }
 
-        // ====================================================================
-        // 🔴🔴🔴 EMPLOYEE: My History with Cancel button 🔴🔴🔴
-        // ====================================================================
+        /* ─── My Requests (Employee) ──────────────────────────── */
         function renderMyRequests() {
-            const rows = (DATA.myRequests||[]).map(r => {
-                const statusBadge = `<span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span>`;
-                
-                // زر الإلغاء: يظهر لأي طلب ما يكون Cancelled
-                const cancelBtn = r.status !== 'Cancelled'
-                    ? `<button onclick="employeeCancel('${r.id}', '${r.status}')" class="btn btn-sm btn-outline-danger" title="Cancel Request"><i class="fas fa-times"></i></button>`
-                    : `<span class="text-muted small">-</span>`;
-                
+            const today = getLocalISODate(new Date());
+            document.getElementById('tb-my-req').innerHTML = (DATA.myRequests || []).map(r => {
+
+                // 🆕 Employee can cancel only if start date hasn't passed yet
+                const canCancel = r.status !== 'Cancelled' && r.start > today;
+
                 return `<tr>
-                    <td>${r.timestamp||'-'}</td>
+                    <td>${r.timestamp || '-'}</td>
                     <td><span class="badge bg-secondary">${r.type}</span></td>
                     <td>${r.start} → ${r.end}</td>
                     <td><strong>${r.days}</strong></td>
-                    <td>${statusBadge}</td>
-                    <td>${r.notes||'-'}</td>
-                    <td>${r.attachment?`<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file"></i></a>`:'-'}</td>
-                    <td>${cancelBtn}</td>
+                    <td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td>
+                    <td>${r.notes || '-'}</td>
+                    <td>${r.attachment ? `<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file"></i></a>` : '-'}</td>
+                    <td>
+                        ${canCancel
+                            ? `<button onclick="cancelMyRequest('${r.id}')" class="btn btn-sm btn-outline-danger" title="Cancel">
+                                   <i class="fas fa-times"></i> Cancel
+                               </button>`
+                            : `<span class="text-muted small">${r.status === 'Cancelled' ? 'Cancelled' : 'Started'}</span>`
+                        }
+                    </td>
                 </tr>`;
             }).join('');
-            document.getElementById('tb-my-req').innerHTML = rows || '<tr><td colspan="8" class="text-center text-muted">No requests found</td></tr>';
         }
 
-        // 🔴 Employee Cancel with confirmation
-        async function employeeCancel(id, currentStatus) {
-            let warningMsg = 'Are you sure you want to cancel this request?';
-            if (currentStatus === 'Approved') {
-                warningMsg = 'This request is already <strong>Approved</strong>. Cancelling will restore your leave balance. Are you sure?';
-            }
-            const result = await Swal.fire({
+        // 🆕 Employee cancels their own request
+        async function cancelMyRequest(id) {
+            const confirm = await Swal.fire({
                 title: 'Cancel Request?',
-                html: warningMsg,
+                html: 'If this is an <strong>approved Annual leave</strong>, your balance will be restored automatically.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#ef4444',
                 confirmButtonText: 'Yes, Cancel It',
-                cancelButtonText: 'Keep It'
+                cancelButtonText: 'Go Back',
+                confirmButtonColor: '#ef4444'
             });
-            if (!result.isConfirmed) return;
+            if (!confirm.isConfirmed) return;
+
             showLoading('Cancelling...');
             try {
-                const res = await apiCall({ action: 'cancelRequest', id: id, username: DATA.user.username });
+                const res = await apiCall({ action: 'cancelRequest', id, requestedBy: DATA.user.username });
                 if (res.success) {
+                    Swal.fire('Done', 'Request cancelled successfully.', 'success');
                     await refreshData();
-                    Swal.fire('Cancelled', 'Your request has been cancelled.', 'success');
                 } else {
                     Swal.fire('Error', res.message, 'error');
                 }
-            } catch (e) { Swal.fire('Error', 'Failed', 'error'); }
+            } catch (e) { Swal.fire('Error', 'Connection failed', 'error'); }
             hideLoading();
         }
 
-        // ====================================================================
-        // 🔴🔴🔴 ADMIN: Manage Requests with Status Change 🔴🔴🔴
-        // ====================================================================
+        /* ─── Admin Requests ──────────────────────────────────── */
         function renderAdminRequests() {
-            const rows = (DATA.allRequests||[]).map(r => {
-                // Approve/Reject buttons — only for Pending
-                const approveRejectBtns = r.status === 'Pending'
-                    ? `<button onclick="adminAct('${r.id}','Approved')" class="btn btn-sm btn-success me-1" title="Approve">✔</button>
-                       <button onclick="adminAct('${r.id}','Rejected')" class="btn btn-sm btn-danger" title="Reject">✘</button>`
-                    : '-';
-                
-                // 🔴 Status Change dropdown — always visible for Admin
-                const statusOptions = ['Pending', 'Approved', 'Rejected', 'Cancelled']
-                    .map(s => `<option value="${s}" ${r.status === s ? 'selected' : ''}>${s}</option>`)
-                    .join('');
-                const changeStatusBtn = `
-                    <div class="d-flex align-items-center gap-1">
-                        <select class="status-select form-select form-select-sm" id="sel-${r.id}" style="width:110px">
-                            ${statusOptions}
-                        </select>
-                        <button onclick="adminChangeStatus('${r.id}')" class="btn btn-sm btn-outline-secondary" title="Apply">
-                            <i class="fas fa-check"></i>
-                        </button>
-                    </div>`;
-                
+            document.getElementById('tb-admin-req').innerHTML = (DATA.allRequests || []).map(r => {
+                // Build action buttons — exclude current status
+                const actions = [];
+                if (r.status !== 'Approved')
+                    actions.push(`<button onclick="adminChangeStatus('${r.id}','Approved')" class="btn btn-sm btn-success" title="Approve"><i class="fas fa-check"></i></button>`);
+                if (r.status !== 'Rejected')
+                    actions.push(`<button onclick="adminChangeStatus('${r.id}','Rejected')" class="btn btn-sm btn-warning" title="Reject"><i class="fas fa-ban"></i></button>`);
+                if (r.status !== 'Cancelled')
+                    actions.push(`<button onclick="adminChangeStatus('${r.id}','Cancelled')" class="btn btn-sm btn-danger" title="Cancel"><i class="fas fa-times"></i></button>`);
+
                 return `<tr>
                     <td><strong>${r.name}</strong><br><small class="text-muted">${r.username}</small></td>
                     <td><span class="badge bg-secondary">${r.type}</span></td>
                     <td>${r.start}<br><small class="text-muted">${r.end}</small></td>
                     <td><strong>${r.days}</strong></td>
                     <td><span class="badge-status bg-${r.status.toLowerCase()}">${r.status}</span></td>
-                    <td>${r.attachment?`<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file"></i></a>`:'-'}</td>
-                    <td>${approveRejectBtns}</td>
-                    <td>${changeStatusBtn}</td>
+                    <td>${r.attachment ? `<a href="${r.attachment}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fas fa-file"></i></a>` : '-'}</td>
+                    <td><div class="d-flex gap-1">${actions.join('')}</div></td>
                 </tr>`;
             }).join('');
-            document.getElementById('tb-admin-req').innerHTML = rows || '<tr><td colspan="8" class="text-center text-muted">No requests</td></tr>';
         }
 
-        // 🔴 Admin Change Status (any → any) with balance handling
-        async function adminChangeStatus(id) {
-            const sel = document.getElementById('sel-' + id);
-            const newStatus = sel.value;
-            
-            // إيجاد الطلب الحالي
-            const req = (DATA.allRequests||[]).find(r => String(r.id) === String(id));
-            if (!req) return;
-            if (req.status === newStatus) return Swal.fire('No Change', 'Status is already ' + newStatus, 'info');
-            
-            // تحذير خاص لو كان معتمد وبيتغير
-            let warningMsg = `Change status from <strong>${req.status}</strong> to <strong>${newStatus}</strong>?`;
-            if (req.status === 'Approved' && newStatus !== 'Approved' && req.type === 'Annual') {
-                warningMsg += `<br><br><small class="text-success">✓ Leave balance of <strong>${req.days} days</strong> will be <strong>restored</strong> to ${req.name}.</small>`;
-            }
-            if (req.status !== 'Approved' && newStatus === 'Approved' && req.type === 'Annual') {
-                warningMsg += `<br><br><small class="text-danger">⚠ <strong>${req.days} days</strong> will be <strong>deducted</strong> from ${req.name}'s balance.</small>`;
-            }
-            
-            const result = await Swal.fire({
-                title: 'Change Status?',
-                html: warningMsg,
+        // 🆕 Admin changes status of any request (including post-approval)
+        async function adminChangeStatus(id, newStatus) {
+            const labels = { Approved: 'Approve', Rejected: 'Reject', Cancelled: 'Cancel' };
+            const colors = { Approved: '#10b981', Rejected: '#f59e0b', Cancelled: '#ef4444' };
+            const notes  = { Approved: '', Rejected: '', Cancelled: 'If this was an <strong>approved Annual leave</strong>, the balance will be restored automatically.' };
+
+            const confirmed = await Swal.fire({
+                title: `${labels[newStatus]} Request?`,
+                html: notes[newStatus] || '',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonText: 'Yes, Change It',
-                cancelButtonText: 'Cancel'
+                confirmButtonText: `Yes, ${labels[newStatus]}`,
+                cancelButtonText: 'Go Back',
+                confirmButtonColor: colors[newStatus]
             });
-            if (!result.isConfirmed) return;
-            
+            if (!confirmed.isConfirmed) return;
+
             showLoading('Updating...');
             try {
-                const res = await apiCall({ action: 'adminChangeStatus', id: id, newStatus: newStatus });
+                const res = await apiCall({ action: 'adminChangeStatus', id, newStatus });
                 if (res.success) {
+                    Swal.fire('Updated', res.message, 'success');
                     await refreshData();
-                    Swal.fire('Updated', 'Status changed to ' + newStatus, 'success');
                 } else {
                     Swal.fire('Error', res.message, 'error');
                 }
-            } catch (e) { Swal.fire('Error', 'Failed', 'error'); }
+            } catch (e) { Swal.fire('Error', 'Connection failed', 'error'); }
             hideLoading();
         }
 
-        async function adminAct(id, act) { 
-            if(!(await Swal.fire({title:act+'?',icon:'question',showCancelButton:true})).isConfirmed) return; 
-            showLoading('Processing...'); 
-            await apiCall({action:'adminAction',id,act,notes:''}); 
-            await refreshData(); 
-            hideLoading(); 
+        /* ─── Admin: original quick-action (kept for compatibility) ── */
+        async function adminAct(id, act) {
+            if (!(await Swal.fire({ title: act + '?', icon: 'question', showCancelButton: true })).isConfirmed) return;
+            showLoading('Processing...');
+            await apiCall({ action: 'adminAction', id, act, notes: '' });
+            await refreshData();
+            hideLoading();
         }
 
-        async function loadEmployees() { 
-            try { 
-                const res = await apiCall({action:'getAllEmployees'}); 
-                if(res.success) document.getElementById('tb-employees').innerHTML = res.employees.map(e => `<tr><td>${e.name}</td><td>${e.username}</td><td>${e.role}</td><td>${e.email}</td><td>${e.balance}</td><td><button onclick="openBalModal('${e.username}',${e.balance})" class="btn btn-sm btn-outline-warning">Edit</button></td></tr>`).join(''); 
-            } catch(e){} 
+        /* ─── Employees ───────────────────────────────────────── */
+        async function loadEmployees() {
+            try {
+                const res = await apiCall({ action: 'getAllEmployees' });
+                if (res.success) document.getElementById('tb-employees').innerHTML =
+                    res.employees.map(e => `<tr>
+                        <td>${e.name}</td><td>${e.username}</td><td>${e.role}</td><td>${e.email}</td><td>${e.balance}</td>
+                        <td><button onclick="openBalModal('${e.username}',${e.balance})" class="btn btn-sm btn-outline-warning">Edit</button></td>
+                    </tr>`).join('');
+            } catch (e) {}
         }
-        
-        function openAddEmpModal() { 
-            document.getElementById('e-name').value=''; document.getElementById('e-user').value=''; document.getElementById('e-pass').value='';
-            document.getElementById('e-mail').value=''; document.getElementById('e-role').value='Employee'; document.getElementById('e-bal').value='20';
-            new bootstrap.Modal(document.getElementById('empModal')).show(); 
+        function openAddEmpModal() {
+            ['e-name','e-user','e-pass','e-mail'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('e-role').value = 'Employee';
+            document.getElementById('e-bal').value  = '20';
+            new bootstrap.Modal(document.getElementById('empModal')).show();
         }
-        
-        async function addEmployee() { 
-            const emp = { name: document.getElementById('e-name').value.trim(), username: document.getElementById('e-user').value.trim(), password: document.getElementById('e-pass').value, email: document.getElementById('e-mail').value.trim(), role: document.getElementById('e-role').value, balance: document.getElementById('e-bal').value }; 
+        async function addEmployee() {
+            const emp = {
+                name: document.getElementById('e-name').value.trim(),
+                username: document.getElementById('e-user').value.trim(),
+                password: document.getElementById('e-pass').value,
+                email: document.getElementById('e-mail').value.trim(),
+                role: document.getElementById('e-role').value,
+                balance: document.getElementById('e-bal').value
+            };
             if (!emp.name || !emp.username || !emp.password) return Swal.fire('Error', 'Required fields missing', 'error');
-            showLoading('Saving...'); 
+            showLoading('Saving...');
             bootstrap.Modal.getInstance(document.getElementById('empModal')).hide();
             try {
-                const res = await apiCall({action:'addEmployee', employee:emp});
-                if (res.success) { await refreshData(); Swal.fire('Success', 'Employee added', 'success'); } 
+                const res = await apiCall({ action: 'addEmployee', employee: emp });
+                if (res.success) { await refreshData(); Swal.fire('Success', 'Employee added', 'success'); }
                 else Swal.fire('Error', res.message, 'error');
             } catch (e) { Swal.fire('Error', 'Failed to add employee', 'error'); }
-            hideLoading(); 
+            hideLoading();
         }
-        
-        function openBalModal(u,b) { document.getElementById('eb-user').value=u; document.getElementById('eb-val').value=b; new bootstrap.Modal(document.getElementById('balModal')).show(); }
-        async function saveBalance() { showLoading(); bootstrap.Modal.getInstance(document.getElementById('balModal')).hide(); await apiCall({action:'updateBalance', username:document.getElementById('eb-user').value, balance:document.getElementById('eb-val').value}); await refreshData(); hideLoading(); }
-        
-        function openChangePassword() { document.getElementById('old-pass').value=''; new bootstrap.Modal(document.getElementById('passModal')).show(); }
-        async function changePassword() { const o=document.getElementById('old-pass').value, n=document.getElementById('new-pass').value; showLoading('Changing...'); bootstrap.Modal.getInstance(document.getElementById('passModal')).hide(); const res = await apiCall({action:'changePassword', username:DATA.user.username, oldPass:o, newPass:n}); Swal.fire(res.success?'Success':'Error', res.message, res.success?'success':'error'); hideLoading(); }
-        
-        function renderSettings() { document.getElementById('tb-settings').innerHTML = (DATA.settings||[]).filter(x=>x.type==='Season').map((x,i) => `<tr><td>${x.start}</td><td>${x.end}</td><td>${x.limit}</td><td><button onclick="delSet(${i})" class="btn btn-sm btn-danger">X</button></td></tr>`).join(''); }
-        async function saveSeason() { 
-            showLoading('Saving...'); 
-            await apiCall({ action:'saveSeason', start:document.getElementById('s-start').value, end:document.getElementById('s-end').value, limit:document.getElementById('s-limit').value}); 
-            document.getElementById('s-start').value=''; document.getElementById('s-end').value=''; document.getElementById('s-limit').value='';
-            await refreshData(); hideLoading(); 
+        function openBalModal(u, b) {
+            document.getElementById('eb-user').value = u;
+            document.getElementById('eb-val').value  = b;
+            new bootstrap.Modal(document.getElementById('balModal')).show();
         }
-        async function delSet(i) { if(confirm('Delete?')) { showLoading('Deleting...'); await apiCall({action:'deleteSetting', index:i}); await refreshData(); hideLoading(); } }
+        async function saveBalance() {
+            showLoading();
+            bootstrap.Modal.getInstance(document.getElementById('balModal')).hide();
+            await apiCall({ action: 'updateBalance', username: document.getElementById('eb-user').value, balance: document.getElementById('eb-val').value });
+            await refreshData(); hideLoading();
+        }
+
+        /* ─── Password ────────────────────────────────────────── */
+        function openChangePassword() {
+            document.getElementById('old-pass').value = '';
+            new bootstrap.Modal(document.getElementById('passModal')).show();
+        }
+        async function changePassword() {
+            const o = document.getElementById('old-pass').value;
+            const n = document.getElementById('new-pass').value;
+            showLoading('Changing...');
+            bootstrap.Modal.getInstance(document.getElementById('passModal')).hide();
+            const res = await apiCall({ action: 'changePassword', username: DATA.user.username, oldPass: o, newPass: n });
+            Swal.fire(res.success ? 'Success' : 'Error', res.message, res.success ? 'success' : 'error');
+            hideLoading();
+        }
+
+        /* ─── Settings ────────────────────────────────────────── */
+        function renderSettings() {
+            document.getElementById('tb-settings').innerHTML =
+                (DATA.settings || []).filter(x => x.type === 'Season').map((x, i) =>
+                    `<tr><td>${x.start}</td><td>${x.end}</td><td>${x.limit}</td>
+                     <td><button onclick="delSet(${i})" class="btn btn-sm btn-danger">X</button></td></tr>`
+                ).join('');
+        }
+        async function saveSeason() {
+            showLoading('Saving...');
+            await apiCall({ action: 'saveSeason', start: document.getElementById('s-start').value, end: document.getElementById('s-end').value, limit: document.getElementById('s-limit').value });
+            document.getElementById('s-start').value = '';
+            document.getElementById('s-end').value   = '';
+            document.getElementById('s-limit').value = '';
+            await refreshData(); hideLoading();
+        }
+        async function delSet(i) {
+            if (confirm('Delete?')) { showLoading('Deleting...'); await apiCall({ action: 'deleteSetting', index: i }); await refreshData(); hideLoading(); }
+        }
     </script>
 </body>
 </html>
