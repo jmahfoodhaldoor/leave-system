@@ -780,7 +780,11 @@
             if (!sel) return;
             const current = sel.value;
             const seen = new Map();
-            (DATA.allRequests || []).forEach(r => { if (!seen.has(r.username)) seen.set(r.username, r.name); });
+            // 🔧 usernames may come back as numbers from the backend, so key by String() to avoid duplicates/mismatches
+            (DATA.allRequests || []).forEach(r => {
+                const key = String(r.username);
+                if (!seen.has(key)) seen.set(key, r.name);
+            });
             const names = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
             sel.innerHTML = '<option value="">All Employees</option>' +
                 names.map(([username, name]) => `<option value="${username}">${name}</option>`).join('');
@@ -804,7 +808,7 @@
 
             let rows = [...(DATA.allRequests || [])];
             if (statusFilter) rows = rows.filter(r => r.status === statusFilter);
-            if (empFilter)    rows = rows.filter(r => r.username === empFilter);
+            if (empFilter)    rows = rows.filter(r => String(r.username) === String(empFilter)); // 🔧 string-safe compare
 
             const [sortField, sortDir] = sortVal.split('-');
             rows.sort((a, b) => {
@@ -885,14 +889,30 @@
 
         /* ─── Employees ───────────────────────────────────────── */
         async function loadEmployees() {
+            const tbody = document.getElementById('tb-employees');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Loading...</td></tr>';
             try {
                 const res = await apiCall({ action: 'getAllEmployees' });
-                if (res.success) document.getElementById('tb-employees').innerHTML =
-                    res.employees.map(e => `<tr>
+                // 🔧 surface real errors instead of failing silently
+                if (res.success) {
+                    if (!res.employees || res.employees.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">No employees found.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = res.employees.map(e => `<tr>
                         <td>${e.name}</td><td>${e.username}</td><td>${e.role}</td><td>${e.email}</td><td>${e.balance}</td>
                         <td><button onclick="openBalModal('${e.username}',${e.balance})" class="btn btn-sm btn-outline-warning">Edit</button></td>
                     </tr>`).join('');
-            } catch (e) {}
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Failed to load employees.</td></tr>';
+                    console.error('getAllEmployees failed:', res.message);
+                    Swal.fire('Error', res.message || 'Failed to load employees list', 'error');
+                }
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">Connection error while loading employees.</td></tr>';
+                console.error('loadEmployees error:', e);
+                Swal.fire('Error', 'Connection failed while loading employees', 'error');
+            }
         }
         function openAddEmpModal() {
             ['e-name','e-user','e-pass','e-mail'].forEach(id => document.getElementById(id).value = '');
