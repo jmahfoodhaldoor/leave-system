@@ -140,9 +140,42 @@
                     <div class="col-md-3"><div class="stat-card" style="border-left-color:#10b981"><h2 class="fw-bold mb-1" id="st-approved">0</h2><small class="text-muted">Approved</small></div></div>
                     <div class="col-md-3"><div class="stat-card" style="border-left-color:#ef4444"><h2 class="fw-bold mb-1" id="st-rejected">0</h2><small class="text-muted">Rejected</small></div></div>
                 </div>
+
+                <!-- 🆕 Admin-only: This month / Next month leave counts -->
+                <div id="admin-stats-2" class="row g-4 mb-4 hidden">
+                    <div class="col-md-6">
+                        <div class="stat-card" style="border-left-color:#8b5cf6">
+                            <h2 class="fw-bold mb-1" id="st-month">0</h2>
+                            <small class="text-muted">On Leave This Month</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-card" style="border-left-color:#06b6d4">
+                            <h2 class="fw-bold mb-1" id="st-nextmonth">0</h2>
+                            <small class="text-muted">On Leave Next Month</small>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card-custom">
                     <h6 class="fw-bold mb-3"><i class="fas fa-calendar-day me-2 text-primary"></i> Who's On Leave Today?</h6>
                     <div id="team-view-container" class="d-flex flex-wrap gap-2"><small class="text-muted">Loading...</small></div>
+                </div>
+
+                <!-- 🆕 Admin-only: Upcoming leaves (7 days) + Pending requests -->
+                <div id="admin-lists-row" class="row g-4 hidden">
+                    <div class="col-md-6">
+                        <div class="card-custom h-100">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-clock me-2 text-primary"></i> Upcoming Leaves (Next 7 Days)</h6>
+                            <div id="upcoming-leaves-container" class="d-flex flex-column gap-2"><small class="text-muted">Loading...</small></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card-custom h-100">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-hourglass-half me-2 text-warning"></i> Pending Requests</h6>
+                            <div id="pending-list-container" class="d-flex flex-column gap-2"><small class="text-muted">Loading...</small></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -162,7 +195,7 @@
                 </div>
             </div>
 
-            <!-- MY HISTORY — 🆕 added Action column -->
+            <!-- MY HISTORY -->
             <div id="page-my-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">My History</h3>
                 <div class="card-custom">
@@ -186,10 +219,32 @@
                 </div>
             </div>
 
-            <!-- ADMIN REQUESTS — 🆕 status change buttons for all states -->
+            <!-- ADMIN REQUESTS -->
             <div id="page-admin-req" class="page-section hidden">
                 <h3 class="fw-bold mb-4">Manage Requests</h3>
                 <div class="card-custom">
+                    <!-- 🆕 Filters + Sort -->
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <select id="f-status" class="form-select form-select-sm" style="max-width:170px" onchange="renderAdminRequests()">
+                            <option value="">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                        <select id="f-employee" class="form-select form-select-sm" style="max-width:220px" onchange="renderAdminRequests()">
+                            <option value="">All Employees</option>
+                        </select>
+                        <select id="f-sort" class="form-select form-select-sm" style="max-width:230px" onchange="renderAdminRequests()">
+                            <option value="timestamp-desc">Submitted: Newest First</option>
+                            <option value="timestamp-asc">Submitted: Oldest First</option>
+                            <option value="start-asc">Leave Start: Nearest First</option>
+                            <option value="start-desc">Leave Start: Farthest First</option>
+                        </select>
+                        <button onclick="resetAdminFilters()" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-rotate-left me-1"></i> Reset
+                        </button>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead class="table-light">
@@ -392,6 +447,8 @@
             if (u.role === 'Admin') {
                 document.getElementById('menu-admin').classList.remove('hidden');
                 document.getElementById('admin-stats').classList.remove('hidden');
+                document.getElementById('admin-stats-2').classList.remove('hidden');
+                document.getElementById('admin-lists-row').classList.remove('hidden');
                 const pending = (DATA.allRequests || []).filter(r => r.status === 'Pending').length;
                 if (pending > 0) {
                     document.getElementById('badge-pending').textContent = pending;
@@ -472,6 +529,63 @@
                         <div style="line-height:1.1"><div class="fw-bold small">${o.name}</div><small class="text-muted" style="font-size:10px">${o.type}</small></div>
                     </div>`).join('');
             }
+
+            if (DATA.user && DATA.user.role === 'Admin') renderAdminDashboardExtras();
+        }
+
+        /* ─── 🆕 Admin Dashboard Extras ───────────────────────── */
+        function monthRange(offset) {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+            const end   = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+            return { start: getLocalISODate(start), end: getLocalISODate(end) };
+        }
+        function countUniqueOnLeave(rangeStart, rangeEnd) {
+            const approved = (DATA.allRequests || []).filter(r =>
+                r.status === 'Approved' && !(r.end < rangeStart || r.start > rangeEnd));
+            return new Set(approved.map(r => r.username)).size;
+        }
+        function renderAdminDashboardExtras() {
+            const thisMonth = monthRange(0);
+            const nextMonth = monthRange(1);
+            document.getElementById('st-month').textContent     = countUniqueOnLeave(thisMonth.start, thisMonth.end);
+            document.getElementById('st-nextmonth').textContent = countUniqueOnLeave(nextMonth.start, nextMonth.end);
+
+            // Upcoming leaves: next 7 days, Approved only, sorted by nearest start date
+            const today = getLocalISODate(new Date());
+            const in7   = getLocalISODate(new Date(Date.now() + 7 * 86400000));
+            const upcoming = (DATA.allRequests || [])
+                .filter(r => r.status === 'Approved' && r.start >= today && r.start <= in7)
+                .sort((a, b) => a.start.localeCompare(b.start));
+
+            const upcContainer = document.getElementById('upcoming-leaves-container');
+            upcContainer.innerHTML = upcoming.length === 0
+                ? '<small class="text-muted">No upcoming leaves in the next 7 days.</small>'
+                : upcoming.map(r => `
+                    <div class="d-flex justify-content-between align-items-center border rounded p-2">
+                        <div>
+                            <div class="fw-bold small">${r.name}</div>
+                            <small class="text-muted">${r.type} • ${r.start} → ${r.end}</small>
+                        </div>
+                        <span class="badge bg-primary bg-opacity-10 text-primary">${r.days}d</span>
+                    </div>`).join('');
+
+            // Pending requests, sorted oldest submitted first
+            const pending = (DATA.allRequests || [])
+                .filter(r => r.status === 'Pending')
+                .sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
+
+            const pendContainer = document.getElementById('pending-list-container');
+            pendContainer.innerHTML = pending.length === 0
+                ? '<small class="text-muted">No pending requests.</small>'
+                : pending.map(r => `
+                    <div class="d-flex justify-content-between align-items-center border rounded p-2">
+                        <div>
+                            <div class="fw-bold small">${r.name}</div>
+                            <small class="text-muted">${r.type} • ${r.start} → ${r.end}</small>
+                        </div>
+                        <span class="badge bg-warning bg-opacity-10 text-warning">${r.days}d</span>
+                    </div>`).join('');
         }
 
         /* ─── Calendar ────────────────────────────────────────── */
@@ -612,7 +726,6 @@
             const today = getLocalISODate(new Date());
             document.getElementById('tb-my-req').innerHTML = (DATA.myRequests || []).map(r => {
 
-                // 🆕 Employee can cancel only if start date hasn't passed yet
                 const canCancel = r.status !== 'Cancelled' && r.start > today;
 
                 return `<tr>
@@ -635,7 +748,6 @@
             }).join('');
         }
 
-        // 🆕 Employee cancels their own request
         async function cancelMyRequest(id) {
             const confirm = await Swal.fire({
                 title: 'Cancel Request?',
@@ -662,8 +774,46 @@
         }
 
         /* ─── Admin Requests ──────────────────────────────────── */
+        // 🆕 populate the employee filter dropdown from current request data
+        function populateEmployeeFilter() {
+            const sel = document.getElementById('f-employee');
+            if (!sel) return;
+            const current = sel.value;
+            const seen = new Map();
+            (DATA.allRequests || []).forEach(r => { if (!seen.has(r.username)) seen.set(r.username, r.name); });
+            const names = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+            sel.innerHTML = '<option value="">All Employees</option>' +
+                names.map(([username, name]) => `<option value="${username}">${name}</option>`).join('');
+            sel.value = current;
+        }
+
+        // 🆕 reset filters/sort back to default
+        function resetAdminFilters() {
+            document.getElementById('f-status').value   = '';
+            document.getElementById('f-employee').value = '';
+            document.getElementById('f-sort').value      = 'timestamp-desc';
+            renderAdminRequests();
+        }
+
         function renderAdminRequests() {
-            document.getElementById('tb-admin-req').innerHTML = (DATA.allRequests || []).map(r => {
+            populateEmployeeFilter();
+
+            const statusFilter = document.getElementById('f-status').value;
+            const empFilter     = document.getElementById('f-employee').value;
+            const sortVal        = document.getElementById('f-sort').value;
+
+            let rows = [...(DATA.allRequests || [])];
+            if (statusFilter) rows = rows.filter(r => r.status === statusFilter);
+            if (empFilter)    rows = rows.filter(r => r.username === empFilter);
+
+            const [sortField, sortDir] = sortVal.split('-');
+            rows.sort((a, b) => {
+                const av = sortField === 'start' ? (a.start || '') : (a.timestamp || '');
+                const bv = sortField === 'start' ? (b.start || '') : (b.timestamp || '');
+                return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+            });
+
+            document.getElementById('tb-admin-req').innerHTML = rows.map(r => {
                 const today   = getLocalISODate(new Date());
                 const started = r.start <= today;
                 const ended   = r.end   <  today;
@@ -688,9 +838,13 @@
                     <td><div class="d-flex gap-1">${actions.join('')}</div></td>
                 </tr>`;
             }).join('');
+
+            if (rows.length === 0) {
+                document.getElementById('tb-admin-req').innerHTML =
+                    '<tr><td colspan="7" class="text-center text-muted py-4">No requests match the selected filters.</td></tr>';
+            }
         }
 
-        // 🆕 Admin changes status of any request (including post-approval)
         async function adminChangeStatus(id, newStatus) {
             const labels = { Approved: 'Approve', Rejected: 'Reject', Cancelled: 'Cancel' };
             const colors = { Approved: '#10b981', Rejected: '#f59e0b', Cancelled: '#ef4444' };
